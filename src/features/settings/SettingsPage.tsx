@@ -1,15 +1,25 @@
-import { Download, LogOut, SunMoon } from "lucide-react";
+import { Download, LogOut, Moon, Sun, SunMoon } from "lucide-react";
+import type { ReactNode } from "react";
 import { Button } from "../../ui/Button";
+import { Chip, ChipRow } from "../../ui/Chip";
 import { Card, Page } from "../../ui/Page";
 import { PageHeader } from "../../ui/PageHeader";
 import { useAuth } from "../auth/useAuth";
 import { useInstallPrompt } from "../pwa/useInstallPrompt";
 import { SectionsEditor } from "./SectionsEditor";
 import s from "./SettingsPage.module.css";
+import { useTheme, type ThemePreference } from "./useTheme";
+
+const THEMES: { value: ThemePreference; label: string; icon: ReactNode }[] = [
+  { value: "system", label: "System", icon: <SunMoon /> },
+  { value: "light", label: "Light", icon: <Sun /> },
+  { value: "dark", label: "Dark", icon: <Moon /> },
+];
 
 export function SettingsPage() {
   const { user, signOut } = useAuth();
   const install = useInstallPrompt();
+  const theme = useTheme();
 
   return (
     <>
@@ -24,6 +34,28 @@ export function SettingsPage() {
             <SectionsEditor />
           </Card>
           <div className={s.stack}>
+            <Card title="App">
+              <div className={s.group}>
+                <h3 className={s.heading}>Theme</h3>
+                <ChipRow>
+                  {THEMES.map(({ value, label, icon }) => (
+                    <Chip
+                      key={value}
+                      icon={icon}
+                      selected={theme.preference === value}
+                      onClick={() => theme.setPreference(value)}
+                    >
+                      {label}
+                    </Chip>
+                  ))}
+                </ChipRow>
+              </div>
+              {!install.isStandalone && (
+                <Button icon={<Download />} onClick={install.show}>
+                  Install app
+                </Button>
+              )}
+            </Card>
             <Card title="Account">
               <div className={s.account}>
                 {user?.photoURL ? (
@@ -44,17 +76,6 @@ export function SettingsPage() {
               <Button icon={<LogOut />} onClick={signOut}>
                 Sign out
               </Button>
-            </Card>
-            <Card title="App">
-              <p className={s.row}>
-                <SunMoon aria-hidden />
-                Light and dark mode follow your device settings.
-              </p>
-              {!install.isStandalone && (
-                <Button icon={<Download />} onClick={install.show}>
-                  Install app
-                </Button>
-              )}
             </Card>
           </div>
         </div>

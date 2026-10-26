@@ -15,6 +15,15 @@
     <meta name="apple-mobile-web-app-title" content="Food Planner" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>Food Planner</title>
+    <script>
+      // Sets the theme before the first paint so a saved choice does not flash; see useTheme.ts.
+      (() => {
+        const saved = localStorage.getItem("theme");
+        const systemDark = matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.dataset.theme =
+          saved === "light" || saved === "dark" ? saved : systemDark ? "dark" : "light";
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

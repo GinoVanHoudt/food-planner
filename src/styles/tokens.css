@@ -1,5 +1,7 @@
+/* data-theme on <html> is set before the first paint by index.html and kept up to date by
+   features/settings/useTheme.ts (system by default, or the theme chosen in Settings). */
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
 
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 
@@ -57,28 +59,28 @@
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #121412;
-    --surface: #1b1e1b;
-    --surface-2: #252925;
-    --text: #eceee9;
-    --text-muted: #9ba196;
-    --border: #2e332e;
-    --accent: #5cc78a;
-    --accent-hover: #74d39c;
-    --accent-soft: #1f3a29;
-    --on-accent: #0b1a10;
-    --danger: #f08a5d;
-    --danger-soft: #3a2219;
-    --on-danger: #1f0f08;
-    --lunch: #e3ab4f;
-    --lunch-soft: #3a2f1c;
-    --dinner: #a2a2f2;
-    --dinner-soft: #26264a;
-    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
-    --shadow-lg: 0 12px 32px rgb(0 0 0 / 0.55);
-    --backdrop: rgb(0 0 0 / 0.55);
-    --header-bg: rgb(18 20 18 / 0.82);
-  }
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #121412;
+  --surface: #1b1e1b;
+  --surface-2: #252925;
+  --text: #eceee9;
+  --text-muted: #9ba196;
+  --border: #2e332e;
+  --accent: #5cc78a;
+  --accent-hover: #74d39c;
+  --accent-soft: #1f3a29;
+  --on-accent: #0b1a10;
+  --danger: #f08a5d;
+  --danger-soft: #3a2219;
+  --on-danger: #1f0f08;
+  --lunch: #e3ab4f;
+  --lunch-soft: #3a2f1c;
+  --dinner: #a2a2f2;
+  --dinner-soft: #26264a;
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 12px 32px rgb(0 0 0 / 0.55);
+  --backdrop: rgb(0 0 0 / 0.55);
+  --header-bg: rgb(18 20 18 / 0.82);
 }

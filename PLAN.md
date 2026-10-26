@@ -22,7 +22,7 @@ A mobile-first PWA for two people to plan lunch and dinner for the next 14 days,
 | Planner UI     | Vertical day cards; tap lunch/dinner row → bottom-sheet recipe picker; desktop 7-col grid       |
 | Shopping UI    | Checked items fly into a collapsed "In cart" group at the bottom                                |
 | Code layout    | Feature folders + CSS Modules + design tokens (light/dark CSS variables), no UI library         |
-| Theme          | Follows system (`prefers-color-scheme`), no manual toggle                                       |
+| Theme          | Follows system by default; Settings can pin light or dark per device (localStorage)             |
 | Animations     | `motion` (page transitions, sheet, list enter/exit, check-off, reorder); honours reduced motion |
 | PWA            | `vite-plugin-pwa` (manifest, icons, Workbox SW); install popup when not running standalone      |
 

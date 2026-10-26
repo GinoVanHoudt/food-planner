@@ -41,17 +41,15 @@
   min-width: 0;
 }
 
-.row {
+.group {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: var(--space-2);
-  color: var(--text-muted);
 }
 
-.row svg {
-  flex: none;
-  width: 18px;
-  height: 18px;
+.heading {
+  font-size: 15px;
+  font-weight: 700;
 }
 
 @media (min-width: 900px) {

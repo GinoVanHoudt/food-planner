@@ -53,7 +53,8 @@ src/
 - **Quantities** are stored per recipe servings and scaled when planned; metric units are summed in
   base units (g/ml) and formatted back (`formatAmount`).
 - **Styling**: CSS Modules next to the component, colours and spacing only via the variables in
-  `styles/tokens.css` (they switch with `prefers-color-scheme`). Mobile first; the desktop layout
+  `styles/tokens.css` (they switch with `data-theme` on `<html>`: the system scheme by default, or
+  the per-device choice in Settings, see `settings/useTheme.ts`). Mobile first; the desktop layout
   starts at `min-width: 900px` (`DESKTOP_QUERY`). Inputs use a 16px font so iOS does not zoom.
 - **Modals** use `ui/Sheet` (bottom sheet on mobile, dialog on desktop). Keep animations short and
   subtle; `MotionConfig reducedMotion="user"` is set at the root.
