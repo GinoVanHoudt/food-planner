@@ -80,11 +80,11 @@ export default defineConfig({
         display: "standalone",
         start_url: "/",
         scope: "/",
-        // Chrome on Android paints an installed app's navigation bar with this, and the page cannot
-        // change it at runtime (the theme-color meta only reaches the status bar). Use the dark
-        // --bg so the bar stays dark in both themes.
+        // Chrome on Android paints an installed app's navigation bar with one of these (which one
+        // varies by version), and the page cannot change it at runtime (the theme-color meta only
+        // reaches the status bar). Use the dark --bg for both so the bar stays dark in both themes.
         theme_color: "#121412",
-        background_color: "#f6f5f1",
+        background_color: "#121412",
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,svg,png,ico,webmanifest}"],
