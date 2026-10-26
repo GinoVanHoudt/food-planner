@@ -27,6 +27,9 @@ original plan and decisions; `README.md` the setup and deploy steps.
 
 Always finish with `vp check` and `vp test`; CI runs both before deploying.
 
+The project is small and simple enough to skip branches and PRs: when asked to commit and push,
+commit straight to `main` and push it (which deploys).
+
 ## Layout
 
 ```
