@@ -1,0 +1,31 @@
+.code {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-5) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--code-bg);
+  color: var(--code-fg);
+}
+
+.code svg {
+  display: block;
+  fill: currentColor;
+}
+
+.qr {
+  width: min(100%, 240px);
+  aspect-ratio: 1;
+}
+
+.barcode {
+  width: min(100%, 320px);
+  height: 96px;
+}
+
+.digits {
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.15em;
+}

@@ -59,6 +59,16 @@ service cloud.firestore {
         && request.resource.data.checked is bool;
     }
 
+    match /cards/{cardId} {
+      allow read, delete: if isMember();
+      allow create, update: if isMember()
+        && isString(request.resource.data.name, 100)
+        && request.resource.data.name.size() > 0
+        && request.resource.data.format in ['qr', 'ean13']
+        && isString(request.resource.data.value, 1000)
+        && request.resource.data.value.size() > 0;
+    }
+
     match /settings/{setting} {
       allow read: if isMember();
       allow write: if isMember() && setting in ['sections', 'shopping'];

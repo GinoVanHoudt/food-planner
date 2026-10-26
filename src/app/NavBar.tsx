@@ -1,4 +1,4 @@
-import { BookOpen, CalendarDays, Settings, ShoppingCart } from "lucide-react";
+import { BookOpen, CalendarDays, Settings, ShoppingCart, WalletCards } from "lucide-react";
 import { motion } from "motion/react";
 import { NavLink } from "react-router";
 import { cx } from "../lib/cx";
@@ -9,6 +9,7 @@ const TABS = [
   { to: "/", label: "Plan", icon: CalendarDays },
   { to: "/recipes", label: "Recipes", icon: BookOpen },
   { to: "/shopping", label: "Shop", icon: ShoppingCart },
+  { to: "/cards", label: "Cards", icon: WalletCards },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 

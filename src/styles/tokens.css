@@ -51,6 +51,9 @@
   --shadow-lg: 0 12px 32px rgb(0 0 0 / 0.14);
   --backdrop: rgb(15 18 15 / 0.4);
   --header-bg: rgb(246 245 241 / 0.82);
+  /* Loyalty card codes stay dark on white in both themes so scanners can read them. */
+  --code-bg: #ffffff;
+  --code-fg: #000000;
 }
 
 @media (min-width: 900px) {

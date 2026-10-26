@@ -1,8 +1,9 @@
 # Food Planner
 
 Mobile-first PWA for two people to plan lunch and dinner for the next 14 days, manage recipes, and
-turn the plan into a shared shopping list that is checked off in the store. `PLAN.md` holds the
-original plan and decisions; `README.md` the setup and deploy steps.
+turn the plan into a shared shopping list that is checked off in the store, with the store loyalty
+cards at hand as QR codes or barcodes. `PLAN.md` holds the original plan and decisions; `README.md`
+the setup and deploy steps.
 
 ## Stack
 
@@ -12,6 +13,7 @@ original plan and decisions; `README.md` the setup and deploy steps.
 - Hosting: Firebase Hosting, deployed by `.github/workflows/deploy.yml` on every push to `main`.
 - `motion` (`motion/react`) for animations, `lucide-react` for icons, `vite-plugin-pwa` for the
   manifest, icons (generated from `public/logo.svg`) and Workbox service worker.
+- `uqr` encodes QR codes; EAN-13 barcodes are encoded in `cards/barcode.ts`.
 
 ## Commands
 
@@ -35,7 +37,7 @@ commit straight to `main` and push it (which deploys).
 ```
 src/
 ├─ app/        Root (auth gate + global overlays), router, AppShell (nav + page transitions)
-├─ features/   one folder per feature: auth, planner, recipes, shopping, settings, ingredients, pwa
+├─ features/   one folder per feature: auth, planner, recipes, shopping, cards, settings, ingredients, pwa
 ├─ lib/        firebase init, live Firestore stores, dates, units, small hooks
 ├─ ui/         shared presentational components (Button, Sheet, Stepper, Chip, Field, Page…)
 └─ styles/     tokens.css (all colours/spacing, light + dark) and global.css
@@ -44,14 +46,15 @@ src/
 ## Conventions
 
 - **Data access**: each feature has one data module (`recipes/recipes.ts`, `planner/plan.ts`,
-  `shopping/shopping.ts`, `settings/sections.ts`, `ingredients/catalog.ts`) with a `liveCollection`
-  / `liveDocument` store (`lib/live.ts`), a `use…()` hook and write functions. Components never call
-  Firestore directly.
+  `shopping/shopping.ts`, `cards/cards.ts`, `settings/sections.ts`, `ingredients/catalog.ts`) with a
+  `liveCollection` / `liveDocument` store (`lib/live.ts`), a `use…()` hook and write functions.
+  Components never call Firestore directly.
 - **Writes are fire-and-forget**: wrap them in `persist()` (`lib/persist.ts`) and never await them in
   the UI. Offline writes only resolve once back online, but the local cache updates immediately.
   Create ids client-side with `doc(collection(...))` instead of `addDoc`.
 - **Pure logic stays Firebase-free** so it can be unit-tested: `lib/dates.ts`, `lib/units.ts`,
-  `planner/types.ts`, `shopping/buildList.ts`. Use `import type` for types from data modules.
+  `planner/types.ts`, `shopping/buildList.ts`, `cards/barcode.ts`. Use `import type` for types from
+  data modules.
 - **Dates** are local-time `DayKey` strings (`YYYY-MM-DD`); compare them as strings.
 - **Quantities** are stored per recipe servings and scaled when planned; metric units are summed in
   base units (g/ml) and formatted back (`formatAmount`).
@@ -66,7 +69,8 @@ src/
 ## Security model
 
 - Access = a Firestore document `members/{lowercased email}` exists and the email is verified.
-  Members are added by hand in the Firebase console; never commit member emails.
+  Members are added by hand in the Firebase console; never commit member emails, and keep loyalty
+  card numbers in Firestore rather than in the code (the bundle is public).
 - `firestore.rules` is the only access control. Update it whenever a collection or field is added
   (it validates shapes per collection) — it deploys together with hosting.
 - Sign-in uses `signInWithRedirect` when the app runs on its auth domain (`<project>.web.app`, so it
@@ -83,6 +87,7 @@ ingredients/{key}      { name, sectionId }                               remembe
 settings/sections      { sections[{id, name}] }                          store walking order
 settings/shopping      { from, to }                                      range of the current list
 shoppingItems/{id}     { name, amounts[], sectionId, checked, manual, sources[] }
+cards/{id}             { name, format: 'qr'|'ean13', value }             store loyalty cards
 ```
 
 <!--VITE PLUS START-->
