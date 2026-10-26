@@ -50,7 +50,6 @@ export function ShoppingPage() {
   const toBuy = items.filter((item) => !item.checked);
   const inCart = items.filter((item) => item.checked).sort(byName);
   const groups = groupBySection(toBuy, sections);
-  const progress = items.length ? inCart.length / items.length : 0;
 
   const addItem = (event: FormEvent) => {
     event.preventDefault();
@@ -112,19 +111,9 @@ export function ShoppingPage() {
           </EmptyState>
         ) : (
           <>
-            <div className={s.progress}>
-              <span>
-                {toBuy.length === 0 ? "All done!" : `${plural(toBuy.length, "item")} left`}
-              </span>
-              <div className={s.bar}>
-                <motion.div
-                  className={s.fill}
-                  initial={false}
-                  animate={{ width: `${progress * 100}%` }}
-                  transition={{ type: "spring", stiffness: 120, damping: 20 }}
-                />
-              </div>
-            </div>
+            <p className={s.progress}>
+              {toBuy.length === 0 ? "All done!" : `${plural(toBuy.length, "item")} left`}
+            </p>
 
             <AnimatePresence initial={false}>
               {toBuy.length === 0 && items.length > 0 && (
