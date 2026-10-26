@@ -80,7 +80,8 @@ export default defineConfig({
         display: "standalone",
         start_url: "/",
         scope: "/",
-        theme_color: "#2f7d4f",
+        // Chrome on Android paints an installed app's navigation bar with this, so match --bg.
+        theme_color: "#f6f5f1",
         background_color: "#f6f5f1",
       },
       workbox: {
