@@ -1,0 +1,165 @@
+.day {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-3) var(--space-3) var(--space-2);
+  border: 2px solid transparent;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.today {
+  border-color: var(--accent);
+}
+
+.past {
+  opacity: 0.6;
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: 0 var(--space-1) var(--space-1);
+}
+
+.label {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.today .label {
+  color: var(--accent);
+}
+
+.date {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.meal {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 48px;
+  padding: var(--space-2) var(--space-1);
+  border: 0;
+  border-top: 1px solid var(--border);
+  background: transparent;
+  text-align: left;
+}
+
+.header + .meal {
+  border-top: 0;
+}
+
+.mealLabel {
+  flex: none;
+  width: 58px;
+  margin-top: 1px;
+  padding: 2px 0;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.lunch {
+  background: var(--lunch-soft);
+  color: var(--lunch);
+}
+
+.dinner {
+  background: var(--dinner-soft);
+  color: var(--dinner);
+}
+
+.content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.add {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--text-muted);
+}
+
+.add svg {
+  width: 16px;
+  height: 16px;
+}
+
+.recipe {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-weight: 600;
+}
+
+.recipeName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.servings {
+  flex: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.note {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 14px;
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+.note svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+/* Narrow 7-column week grid on wide screens: stack the meal label above its content. */
+@media (min-width: 1280px) {
+  .header {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .meal {
+    flex-direction: column;
+    gap: var(--space-1);
+    min-height: 76px;
+  }
+
+  .mealLabel {
+    width: auto;
+    padding: 1px var(--space-2);
+  }
+
+  .content,
+  .recipe {
+    width: 100%;
+  }
+
+  .recipe {
+    flex-wrap: wrap;
+    gap: 0 var(--space-1);
+    font-size: 14px;
+  }
+
+  .recipeName {
+    white-space: normal;
+  }
+}

@@ -1,0 +1,33 @@
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-8) var(--space-4);
+  text-align: center;
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-full);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.icon svg {
+  width: 34px;
+  height: 34px;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.text {
+  max-width: 320px;
+  color: var(--text-muted);
+}

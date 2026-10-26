@@ -1,0 +1,109 @@
+import { describe, expect, it } from "vite-plus/test";
+import type { DayPlan } from "../planner/types";
+import type { Recipe } from "../recipes/recipes";
+import { buildList } from "./buildList";
+
+function recipe(id: string, servings: number, ingredients: Recipe["ingredients"]): Recipe {
+  return { id, name: id, servings, ingredients, instructions: "", sourceUrl: "", tags: [] };
+}
+
+const chili = recipe("Chili", 4, [
+  { name: "Onion", quantity: 2, unit: "" },
+  { name: "Minced beef", quantity: 500, unit: "g" },
+  { name: "Salt", quantity: null, unit: "" },
+]);
+
+const curry = recipe("Curry", 2, [
+  { name: "onion", quantity: 1, unit: "" },
+  { name: "Coconut milk", quantity: 400, unit: "ml" },
+  { name: "minced beef", quantity: 0.25, unit: "kg" },
+]);
+
+const recipes = new Map([chili, curry].map((item) => [item.id, item]));
+
+const sections: Record<string, string> = { onion: "produce", "minced beef": "meat" };
+const sectionOf = (name: string) => sections[name.toLowerCase()] ?? "other";
+
+function plan(...days: DayPlan[]) {
+  return new Map(days.map((day) => [day.id, day]));
+}
+
+describe("buildList", () => {
+  it("merges ingredients across recipes, scaled to the planned servings", () => {
+    const days = plan(
+      { id: "2026-10-26", dinner: { recipes: [{ recipeId: "Chili", servings: 4 }], note: "" } },
+      { id: "2026-10-27", lunch: { recipes: [{ recipeId: "Curry", servings: 4 }], note: "" } },
+    );
+
+    const { items, mealCount } = buildList({
+      days,
+      recipes,
+      from: "2026-10-26",
+      to: "2026-10-27",
+      sectionOf,
+    });
+
+    expect(mealCount).toBe(2);
+    expect(items).toEqual([
+      {
+        name: "Coconut milk",
+        amounts: [{ quantity: 800, unit: "ml" }],
+        sectionId: "other",
+        sources: ["Curry"],
+      },
+      {
+        name: "Minced beef",
+        amounts: [{ quantity: 1000, unit: "g" }],
+        sectionId: "meat",
+        sources: ["Chili", "Curry"],
+      },
+      {
+        name: "Onion",
+        amounts: [{ quantity: 4, unit: "" }],
+        sectionId: "produce",
+        sources: ["Chili", "Curry"],
+      },
+      {
+        name: "Salt",
+        amounts: [{ quantity: null, unit: "" }],
+        sectionId: "other",
+        sources: ["Chili"],
+      },
+    ]);
+  });
+
+  it("rounds whole items up when scaling down", () => {
+    const days = plan({
+      id: "2026-10-26",
+      dinner: { recipes: [{ recipeId: "Chili", servings: 1 }], note: "" },
+    });
+
+    const { items } = buildList({ days, recipes, from: "2026-10-26", to: "2026-10-26", sectionOf });
+
+    expect(items.find((item) => item.name === "Onion")?.amounts).toEqual([
+      { quantity: 1, unit: "" },
+    ]);
+    expect(items.find((item) => item.name === "Minced beef")?.amounts).toEqual([
+      { quantity: 125, unit: "g" },
+    ]);
+  });
+
+  it("only includes days in the range and skips notes and deleted recipes", () => {
+    const days = plan(
+      { id: "2026-10-25", dinner: { recipes: [{ recipeId: "Curry", servings: 2 }], note: "" } },
+      { id: "2026-10-26", lunch: { recipes: [], note: "Leftovers" } },
+      { id: "2026-10-27", dinner: { recipes: [{ recipeId: "Gone", servings: 2 }], note: "" } },
+    );
+
+    const { items, mealCount } = buildList({
+      days,
+      recipes,
+      from: "2026-10-26",
+      to: "2026-10-27",
+      sectionOf,
+    });
+
+    expect(items).toEqual([]);
+    expect(mealCount).toBe(1);
+  });
+});

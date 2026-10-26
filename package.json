@@ -1,0 +1,43 @@
+{
+  "name": "food-planner",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vp dev",
+    "dev:emulators": "vp dev --mode emulator",
+    "emulators": "vp dlx firebase-tools@15 emulators:start --project demo-food-planner",
+    "seed": "vpx scripts/seed-emulator.ts",
+    "build": "vp build",
+    "check": "vp check",
+    "test": "vp test",
+    "preview": "vp preview"
+  },
+  "dependencies": {
+    "firebase": "^13.1.0",
+    "lucide-react": "^1.61.0",
+    "motion": "^14.6.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-router": "^8.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vite-pwa/assets-generator": "^2.0.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "typescript": "~6.0.3",
+    "vite": "catalog:",
+    "vite-plugin-pwa": "^2.0.0",
+    "vite-plus": "catalog:",
+    "workbox-window": "^7.4.1"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "10.34.7",
+      "onFail": "download"
+    }
+  }
+}

@@ -1,0 +1,95 @@
+.wrapper {
+  overflow: hidden;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.toggle {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  min-height: 56px;
+  padding: var(--space-2) 0 var(--space-2) var(--space-1);
+  border: 0;
+  background: transparent;
+  text-align: left;
+}
+
+/* The row clips its overflow (for the collapse animation), so keep the focus ring inside. */
+.toggle:focus-visible {
+  outline-offset: -2px;
+}
+
+.box {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-full);
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    transform 0.2s var(--ease-out);
+}
+
+.box svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: var(--on-accent);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.checked .box {
+  border-color: var(--accent);
+  background: var(--accent);
+  transform: scale(1.08);
+}
+
+.text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.name {
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.checked .name {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.sources {
+  overflow: hidden;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.amount {
+  flex: none;
+  max-width: 40%;
+  font-weight: 600;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.checked .amount {
+  color: var(--text-muted);
+}

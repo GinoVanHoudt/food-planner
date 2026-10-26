@@ -1,0 +1,84 @@
+:root {
+  color-scheme: light dark;
+
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-full: 999px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  --tabbar-height: 64px;
+  --header-height: 60px;
+  --sidebar-width: 232px;
+  --content-max: 1240px;
+
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --bg: #f6f5f1;
+  --surface: #ffffff;
+  --surface-2: #efede7;
+  --text: #1c1f1b;
+  --text-muted: #696e66;
+  --border: #e3e0d8;
+  --accent: #2f7d4f;
+  --accent-hover: #276b43;
+  --accent-soft: #e1efe6;
+  --on-accent: #ffffff;
+  --danger: #c2410c;
+  --danger-soft: #fbe9e1;
+  --on-danger: #ffffff;
+  --lunch: #a86a12;
+  --lunch-soft: #fbf0dc;
+  --dinner: #5252c8;
+  --dinner-soft: #e9e9fb;
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.05), 0 1px 3px rgb(0 0 0 / 0.04);
+  --shadow-lg: 0 12px 32px rgb(0 0 0 / 0.14);
+  --backdrop: rgb(15 18 15 / 0.4);
+  --header-bg: rgb(246 245 241 / 0.82);
+}
+
+@media (min-width: 900px) {
+  :root {
+    --header-height: 72px;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121412;
+    --surface: #1b1e1b;
+    --surface-2: #252925;
+    --text: #eceee9;
+    --text-muted: #9ba196;
+    --border: #2e332e;
+    --accent: #5cc78a;
+    --accent-hover: #74d39c;
+    --accent-soft: #1f3a29;
+    --on-accent: #0b1a10;
+    --danger: #f08a5d;
+    --danger-soft: #3a2219;
+    --on-danger: #1f0f08;
+    --lunch: #e3ab4f;
+    --lunch-soft: #3a2f1c;
+    --dinner: #a2a2f2;
+    --dinner-soft: #26264a;
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-lg: 0 12px 32px rgb(0 0 0 / 0.55);
+    --backdrop: rgb(0 0 0 / 0.55);
+    --header-bg: rgb(18 20 18 / 0.82);
+  }
+}
