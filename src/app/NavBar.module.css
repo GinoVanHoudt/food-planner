@@ -6,9 +6,7 @@
   z-index: 20;
   padding: 0 var(--safe-right) var(--safe-bottom) var(--safe-left);
   border-top: 1px solid var(--border);
-  background: var(--header-bg);
-  backdrop-filter: blur(16px) saturate(1.4);
-  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  background: var(--bg);
 }
 
 .brand {
@@ -91,7 +89,6 @@
     border-top: 0;
     border-right: 1px solid var(--border);
     background: var(--surface);
-    backdrop-filter: none;
   }
 
   .brand {
