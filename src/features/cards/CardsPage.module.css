@@ -4,3 +4,17 @@
   gap: var(--space-4);
   align-items: start;
 }
+
+.codeButton {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: none;
+  transition: transform 0.15s;
+}
+
+.codeButton:active {
+  transform: scale(0.98);
+}

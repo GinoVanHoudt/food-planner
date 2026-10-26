@@ -1,8 +1,9 @@
 import { X } from "lucide-react";
 import { AnimatePresence, motion, useDragControls, type PanInfo } from "motion/react";
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useId, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { DESKTOP_QUERY, useMediaQuery } from "../lib/useMediaQuery";
+import { useModal } from "../lib/useModal";
 import { IconButton } from "./Button";
 import s from "./Sheet.module.css";
 
@@ -22,27 +23,7 @@ export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
   const isDesktop = useMediaQuery(DESKTOP_QUERY);
   const dragControls = useDragControls();
   const panelRef = useRef<HTMLDivElement>(null);
-  const onCloseRef = useRef(onClose);
-  useEffect(() => {
-    onCloseRef.current = onClose;
-  });
-
-  useEffect(() => {
-    if (!open) return;
-    const previousFocus = document.activeElement as HTMLElement | null;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onCloseRef.current();
-    };
-    document.addEventListener("keydown", onKeyDown);
-    if (!panelRef.current?.contains(document.activeElement)) panelRef.current?.focus();
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", onKeyDown);
-      previousFocus?.focus();
-    };
-  }, [open]);
+  useModal(open, onClose, panelRef);
 
   const hidden = isDesktop ? { opacity: 0, scale: 0.96, y: 12 } : { y: "100%" };
 

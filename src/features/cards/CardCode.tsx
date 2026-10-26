@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { encode } from "uqr";
+import { cx } from "../../lib/cx";
 import { cleanDigits, ean13Modules, modulesPath, toEan13, type CardFormat } from "./barcode";
 import s from "./CardCode.module.css";
 
@@ -54,9 +55,18 @@ function Barcode({ value }: { value: string }) {
 }
 
 /** A card's value as a QR code or barcode, always dark on white so scanners can read it. */
-export function CardCode({ format, value }: { format: CardFormat; value: string }) {
+export function CardCode({
+  format,
+  value,
+  large = false,
+}: {
+  format: CardFormat;
+  value: string;
+  /** Fills the available width, for showing the code at the register. */
+  large?: boolean;
+}) {
   return (
-    <div className={s.code}>
+    <div className={cx(s.code, large && s.large)}>
       {format === "qr" ? <QrCode value={value} /> : <Barcode value={value} />}
     </div>
   );

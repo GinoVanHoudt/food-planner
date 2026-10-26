@@ -29,3 +29,23 @@
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.15em;
 }
+
+.large {
+  gap: var(--space-3);
+  padding: var(--space-8);
+  border-radius: var(--radius-lg);
+}
+
+/* Capped by the height too, so the QR code still fits on a phone held sideways. */
+.large .qr {
+  width: min(100%, 70dvh);
+}
+
+.large .barcode {
+  width: 100%;
+  height: min(40vw, 200px);
+}
+
+.large .digits {
+  font-size: 20px;
+}

@@ -9,10 +9,12 @@ import { CardCode } from "./CardCode";
 import { deleteCard, useCards, type LoyaltyCard } from "./cards";
 import { CardSheet, type CardTarget } from "./CardSheet";
 import s from "./CardsPage.module.css";
+import { CodeOverlay } from "./CodeOverlay";
 
 export function CardsPage() {
   const { cards, loading } = useCards();
   const [target, setTarget] = useState<CardTarget | null>(null);
+  const [shown, setShown] = useState<LoyaltyCard | null>(null);
   // Kept after the confirmation closes so its text stays put while it animates out.
   const [deleting, setDeleting] = useState<LoyaltyCard | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -51,13 +53,21 @@ export function CardsPage() {
                   </IconButton>
                 }
               >
-                <CardCode format={card.format} value={card.value} />
+                <button
+                  type="button"
+                  className={s.codeButton}
+                  aria-label={`Show ${card.name} full size`}
+                  onClick={() => setShown(card)}
+                >
+                  <CardCode format={card.format} value={card.value} />
+                </button>
               </Card>
             ))}
           </div>
         )}
       </Page>
 
+      <CodeOverlay card={shown} onClose={() => setShown(null)} />
       <CardSheet
         target={target}
         onClose={() => setTarget(null)}
