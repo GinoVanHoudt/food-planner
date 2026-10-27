@@ -1,13 +1,34 @@
 import { GripVertical, Plus, X } from "lucide-react";
 import { Reorder, useDragControls } from "motion/react";
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
-import { IconButton } from "../../ui/Button";
-import { Input } from "../../ui/Field";
-import s from "./SectionsEditor.module.css";
-import { OTHER_SECTION_ID, saveSections, useSections, type Section } from "./sections";
+import { IconButton } from "./Button";
+import { Input } from "./Field";
+import s from "./OrderedListEditor.module.css";
 
-export function SectionsEditor() {
-  const saved = useSections();
+export interface ListItem {
+  id: string;
+  name: string;
+}
+
+interface OrderedListEditorProps {
+  /** The saved list; changes from the other device show up unless a drag is in progress. */
+  items: ListItem[];
+  onSave: (items: ListItem[]) => void;
+  /** The catch-all item: it cannot be deleted and new items are added before it. */
+  fixedId: string;
+  /** What an item is called in labels, e.g. "section". */
+  noun: string;
+  placeholder: string;
+}
+
+/** A list of names to add, rename, delete and drag into order. */
+export function OrderedListEditor({
+  items: saved,
+  onSave,
+  fixedId,
+  noun,
+  placeholder,
+}: OrderedListEditorProps) {
   const [items, setItems] = useState(saved);
   const [syncedWith, setSyncedWith] = useState(saved);
   const [dragging, setDragging] = useState(false);
@@ -23,9 +44,9 @@ export function SectionsEditor() {
     setItems(saved);
   }
 
-  const commit = (next: Section[]) => {
+  const commit = (next: ListItem[]) => {
     setItems(next);
-    saveSections(next);
+    onSave(next);
   };
 
   const move = (index: number, offset: number) => {
@@ -40,32 +61,34 @@ export function SectionsEditor() {
     event.preventDefault();
     const name = newName.trim();
     if (!name) return;
-    const section = { id: crypto.randomUUID().slice(0, 8), name };
-    const otherIndex = items.findIndex((item) => item.id === OTHER_SECTION_ID);
-    const at = otherIndex === -1 ? items.length : otherIndex;
-    commit([...items.slice(0, at), section, ...items.slice(at)]);
+    const item = { id: crypto.randomUUID().slice(0, 8), name };
+    const fixedIndex = items.findIndex(({ id }) => id === fixedId);
+    const at = fixedIndex === -1 ? items.length : fixedIndex;
+    commit([...items.slice(0, at), item, ...items.slice(at)]);
     setNewName("");
   };
 
   return (
     <div className={s.editor}>
       <Reorder.Group axis="y" values={items} onReorder={setItems} className={s.list}>
-        {items.map((section, index) => (
-          <SectionRow
-            key={section.id}
-            section={section}
+        {items.map((item, index) => (
+          <ItemRow
+            key={item.id}
+            item={item}
+            noun={noun}
+            deletable={item.id !== fixedId}
             onDragStart={() => setDragging(true)}
             onDragEnd={() => {
               setDragging(false);
               // The dragged order wins over any remote change that arrived mid-drag.
               setSyncedWith(saved);
-              saveSections(itemsRef.current);
+              onSave(itemsRef.current);
             }}
             onMove={(offset) => move(index, offset)}
             onRename={(name) =>
-              commit(items.map((item) => (item.id === section.id ? { ...item, name } : item)))
+              commit(items.map((other) => (other.id === item.id ? { ...other, name } : other)))
             }
-            onDelete={() => commit(items.filter((item) => item.id !== section.id))}
+            onDelete={() => commit(items.filter((other) => other.id !== item.id))}
           />
         ))}
       </Reorder.Group>
@@ -73,10 +96,10 @@ export function SectionsEditor() {
         <Input
           value={newName}
           onChange={(event) => setNewName(event.target.value)}
-          placeholder="New section, e.g. Spices"
-          aria-label="New section name"
+          placeholder={placeholder}
+          aria-label={`New ${noun} name`}
         />
-        <IconButton type="submit" label="Add section" disabled={!newName.trim()}>
+        <IconButton type="submit" label={`Add ${noun}`} disabled={!newName.trim()}>
           <Plus />
         </IconButton>
       </form>
@@ -84,8 +107,10 @@ export function SectionsEditor() {
   );
 }
 
-interface SectionRowProps {
-  section: Section;
+interface ItemRowProps {
+  item: ListItem;
+  noun: string;
+  deletable: boolean;
   onDragStart: () => void;
   onDragEnd: () => void;
   onMove: (offset: number) => void;
@@ -93,14 +118,16 @@ interface SectionRowProps {
   onDelete: () => void;
 }
 
-function SectionRow({
-  section,
+function ItemRow({
+  item,
+  noun,
+  deletable,
   onDragStart,
   onDragEnd,
   onMove,
   onRename,
   onDelete,
-}: SectionRowProps) {
+}: ItemRowProps) {
   const dragControls = useDragControls();
 
   const onHandleKeyDown = (event: KeyboardEvent) => {
@@ -112,7 +139,7 @@ function SectionRow({
 
   return (
     <Reorder.Item
-      value={section}
+      value={item}
       dragListener={false}
       dragControls={dragControls}
       onDragStart={onDragStart}
@@ -123,26 +150,26 @@ function SectionRow({
       <button
         type="button"
         className={s.handle}
-        aria-label={`Move ${section.name} (use arrow keys)`}
+        aria-label={`Move ${item.name} (use arrow keys)`}
         onPointerDown={(event) => dragControls.start(event)}
         onKeyDown={onHandleKeyDown}
       >
         <GripVertical />
       </button>
       <input
-        key={section.name}
+        key={item.name}
         className={s.name}
-        defaultValue={section.name}
-        aria-label="Section name"
+        defaultValue={item.name}
+        aria-label={`Name of ${noun} ${item.name}`}
         onBlur={(event) => {
           const name = event.target.value.trim();
-          if (name && name !== section.name) onRename(name);
-          else event.target.value = section.name;
+          if (name && name !== item.name) onRename(name);
+          else event.target.value = item.name;
         }}
         onKeyDown={(event) => event.key === "Enter" && event.currentTarget.blur()}
       />
-      {section.id !== OTHER_SECTION_ID && (
-        <IconButton label={`Delete ${section.name}`} onClick={onDelete}>
+      {deletable && (
+        <IconButton label={`Delete ${item.name}`} onClick={onDelete}>
           <X />
         </IconButton>
       )}

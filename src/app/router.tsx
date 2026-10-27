@@ -1,5 +1,5 @@
 import { createBrowserRouter, Navigate } from "react-router";
-import { CardsPage } from "../features/cards/CardsPage";
+import { InventoryPage } from "../features/inventory/InventoryPage";
 import { PlanPage } from "../features/planner/PlanPage";
 import { RecipeEditPage } from "../features/recipes/RecipeEditPage";
 import { RecipePage } from "../features/recipes/RecipePage";
@@ -18,7 +18,7 @@ export const router = createBrowserRouter([
       { path: "recipes/:id", Component: RecipePage },
       { path: "recipes/:id/edit", Component: RecipeEditPage },
       { path: "shopping", Component: ShoppingPage },
-      { path: "cards", Component: CardsPage },
+      { path: "inventory", Component: InventoryPage },
       { path: "settings", Component: SettingsPage },
       { path: "*", element: <Navigate to="/" replace /> },
     ],

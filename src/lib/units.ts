@@ -133,6 +133,58 @@ export function addAmounts(amounts: Amount[]): Amount[] {
   return [...totals].map(([unit, quantity]) => ({ quantity, unit }));
 }
 
+/** Leftovers below this are rounding noise from converting and scaling. */
+const EPSILON = 1e-9;
+
+/**
+ * Takes `need` out of `have`, per unit (after converting metric units). Returns what is `left`, what
+ * was `taken` and what is still `missing`. A unit that is not in `have` cannot be taken, and a need
+ * without a quantity is covered by having any amount at all.
+ */
+export function subtractAmounts(have: Amount[], need: Amount[]) {
+  const left = new Map(addAmounts(have).map(({ quantity, unit }) => [unit, quantity]));
+  const taken: Amount[] = [];
+  const missing: Amount[] = [];
+  for (const { quantity, unit } of addAmounts(need)) {
+    const available = left.get(unit);
+    if (quantity === null) {
+      if (left.size === 0) missing.push({ quantity, unit });
+    } else if (available === undefined) {
+      missing.push({ quantity, unit });
+    } else if (available !== null) {
+      const used = Math.min(available, quantity);
+      left.set(unit, available - used);
+      if (used > EPSILON) taken.push({ quantity: used, unit });
+      if (quantity - used > EPSILON) missing.push({ quantity: quantity - used, unit });
+    }
+  }
+  return {
+    left: [...left]
+      .filter(([, quantity]) => quantity === null || quantity > EPSILON)
+      .map(([unit, quantity]) => ({ quantity, unit })),
+    taken,
+    missing,
+  };
+}
+
+/**
+ * Parses amounts typed on their own, like "500 g", "3", "1.5 kg" or "1 kg + 2 pcs" (the format
+ * `formatAmounts` writes). Returns an empty list for empty text and null if a part is not an amount.
+ */
+export function parseAmounts(text: string): Amount[] | null {
+  if (!text.trim()) return [];
+  const amounts: Amount[] = [];
+  for (const part of text.split("+")) {
+    const match = /^\s*(\d+(?:[.,]\d+)?(?:\s+\d+\/\d+|\/\d+)?)\s*([a-zA-Z]*\.?)\s*$/.exec(
+      expandFractions(part),
+    );
+    const quantity = match && parseQuantity(match[1]);
+    if (!match || quantity === null) return null;
+    amounts.push({ quantity, unit: normalizeUnit(match[2]) });
+  }
+  return addAmounts(amounts);
+}
+
 export function formatQuantity(quantity: number): string {
   return String(Math.round(quantity * 100) / 100);
 }

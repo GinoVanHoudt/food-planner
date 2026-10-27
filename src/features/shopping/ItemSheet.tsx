@@ -1,8 +1,9 @@
-import { Trash } from "lucide-react";
+import { House, Trash } from "lucide-react";
 import { formatAmounts } from "../../lib/units";
 import { Button } from "../../ui/Button";
 import { Chip, ChipRow } from "../../ui/Chip";
 import { Sheet } from "../../ui/Sheet";
+import { setAlwaysAtHome } from "../inventory/inventory";
 import type { Section } from "../settings/sections";
 import s from "./ItemSheet.module.css";
 import { deleteItems, moveToSection, type ShoppingItem } from "./shopping";
@@ -41,6 +42,19 @@ export function ItemSheet({ item, sections, onClose }: ItemSheetProps) {
                 </Chip>
               ))}
             </ChipRow>
+          </div>
+          <div className={s.group}>
+            <Button
+              icon={<House />}
+              onClick={() => {
+                setAlwaysAtHome(item.name);
+                deleteItems([item]);
+                onClose();
+              }}
+            >
+              We always have this
+            </Button>
+            <p className={s.hint}>Like salt or olive oil: it won't be put on the list again.</p>
           </div>
           <Button
             variant="danger"

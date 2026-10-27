@@ -5,16 +5,22 @@ import { liveCollection, useLive } from "../../lib/live";
 import { persist } from "../../lib/persist";
 import { compareNames } from "../../lib/sort";
 import { ingredientKey } from "../../lib/units";
+import { OTHER_LOCATION_ID } from "../settings/locations";
 import { OTHER_SECTION_ID } from "../settings/sections";
 
-/** Every ingredient name used so far, with the store section it was last put in. */
+/**
+ * Every ingredient name used so far, with the store section it was last put in and the place at
+ * home where it is kept.
+ */
 export interface CatalogEntry {
   id: string;
   name: string;
-  sectionId: string;
+  sectionId?: string;
+  locationId?: string;
 }
 
-const catalogStore = liveCollection<CatalogEntry>(() => collection(db, "ingredients"));
+const catalogRef = () => collection(db, "ingredients");
+const catalogStore = liveCollection<CatalogEntry>(catalogRef);
 
 export function useCatalog() {
   const { data, loading } = useLive(catalogStore);
@@ -23,10 +29,13 @@ export function useCatalog() {
     const names = data.map((entry) => entry.name).sort(compareNames);
     const sectionOf = (name: string) =>
       byKey.get(ingredientKey(name))?.sectionId ?? OTHER_SECTION_ID;
+    const locationOf = (name: string) =>
+      byKey.get(ingredientKey(name))?.locationId ?? OTHER_LOCATION_ID;
     return {
       entries: data,
       names,
       sectionOf,
+      locationOf,
       has: (name: string) => byKey.has(ingredientKey(name)),
       loading,
     };
@@ -43,14 +52,32 @@ export function rememberIngredients(names: string[], isKnown: (name: string) => 
   if (unknown.size === 0) return;
   const batch = writeBatch(db);
   for (const [key, name] of unknown) {
-    batch.set(doc(db, "ingredients", key), { name, sectionId: OTHER_SECTION_ID });
+    batch.set(doc(catalogRef(), key), { name, sectionId: OTHER_SECTION_ID }, { merge: true });
   }
   persist(batch.commit(), "Saving ingredients");
 }
 
 export function setIngredientSection(name: string, sectionId: string) {
   persist(
-    setDoc(doc(db, "ingredients", ingredientKey(name)), { name: name.trim(), sectionId }),
+    setDoc(
+      doc(catalogRef(), ingredientKey(name)),
+      { name: name.trim(), sectionId },
+      { merge: true },
+    ),
     "Saving section",
   );
+}
+
+/** Remembers where at home each ingredient is kept. */
+export function setIngredientLocations(entries: { name: string; locationId: string }[]) {
+  if (entries.length === 0) return;
+  const batch = writeBatch(db);
+  for (const { name, locationId } of entries) {
+    batch.set(
+      doc(catalogRef(), ingredientKey(name)),
+      { name: name.trim(), locationId },
+      { merge: true },
+    );
+  }
+  persist(batch.commit(), "Saving location");
 }

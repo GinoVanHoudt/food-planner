@@ -1,7 +1,17 @@
-import { ChevronRight, CircleCheck, Ellipsis, ListPlus, Plus, ShoppingCart } from "lucide-react";
+import {
+  ChevronRight,
+  CircleCheck,
+  Ellipsis,
+  ListPlus,
+  PackageCheck,
+  Plus,
+  ShoppingCart,
+  WalletCards,
+} from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState, type FormEvent } from "react";
 import { formatRange } from "../../lib/dates";
+import { groupInOrder } from "../../lib/group";
 import { plural } from "../../lib/plural";
 import { byName } from "../../lib/sort";
 import { MAX_NAME_LENGTH, parseIngredientLine } from "../../lib/units";
@@ -9,32 +19,19 @@ import { Button, IconButton } from "../../ui/Button";
 import { ConfirmSheet } from "../../ui/ConfirmSheet";
 import { EmptyState } from "../../ui/EmptyState";
 import { Input } from "../../ui/Field";
+import { ListGroup } from "../../ui/ListGroup";
 import { Page } from "../../ui/Page";
 import { PageHeader } from "../../ui/PageHeader";
 import { Sheet } from "../../ui/Sheet";
+import { CardsSheet } from "../cards/CardsSheet";
 import { useCatalog } from "../ingredients/catalog";
-import { OTHER_SECTION_ID, useSections, type Section } from "../settings/sections";
+import { OTHER_SECTION_ID, useSections } from "../settings/sections";
 import { GenerateSheet } from "./GenerateSheet";
 import { ItemRow } from "./ItemRow";
 import { ItemSheet } from "./ItemSheet";
+import { PutAwaySheet } from "./PutAwaySheet";
 import { addManualItem, deleteItems, useShopping, type ShoppingItem } from "./shopping";
 import s from "./ShoppingPage.module.css";
-
-/** Groups items by section in store walking order. Unknown sections fall back to "Other". */
-function groupBySection(items: ShoppingItem[], sections: Section[]) {
-  const known = new Set(sections.map((section) => section.id));
-  const bySection = new Map<string, ShoppingItem[]>();
-  for (const item of [...items].sort(byName)) {
-    const sectionId = known.has(item.sectionId) ? item.sectionId : OTHER_SECTION_ID;
-    const sectionItems = bySection.get(sectionId);
-    if (sectionItems) sectionItems.push(item);
-    else bySection.set(sectionId, [item]);
-  }
-  return sections.flatMap((section) => {
-    const sectionItems = bySection.get(section.id);
-    return sectionItems ? [{ section, items: sectionItems }] : [];
-  });
-}
 
 export function ShoppingPage() {
   const { items, range, loading } = useShopping();
@@ -44,12 +41,15 @@ export function ShoppingPage() {
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+  const [cardsOpen, setCardsOpen] = useState(false);
+  const [puttingAway, setPuttingAway] = useState<ShoppingItem[] | null>(null);
   const [optionsFor, setOptionsFor] = useState<string | null>(null);
   const [newItem, setNewItem] = useState("");
 
-  const toBuy = items.filter((item) => !item.checked);
+  const toBuy = items.filter((item) => !item.checked).sort(byName);
   const inCart = items.filter((item) => item.checked).sort(byName);
-  const groups = groupBySection(toBuy, sections);
+  // In store walking order; items in a deleted section show under "Other".
+  const groups = groupInOrder(toBuy, sections, (item) => item.sectionId, OTHER_SECTION_ID);
 
   const addItem = (event: FormEvent) => {
     event.preventDefault();
@@ -66,6 +66,9 @@ export function ShoppingPage() {
         subtitle={range ? formatRange(range.from, range.to) : undefined}
         actions={
           <>
+            <IconButton label="Loyalty cards" onClick={() => setCardsOpen(true)}>
+              <WalletCards />
+            </IconButton>
             <IconButton label="New list from plan" onClick={() => setGenerateOpen(true)}>
               <ListPlus />
             </IconButton>
@@ -129,55 +132,43 @@ export function ShoppingPage() {
                   Everything is in the cart
                 </motion.div>
               )}
-              {groups.map(({ section, items: sectionItems }) => (
-                <motion.section
-                  key={section.id}
-                  layout
-                  className={s.section}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                >
-                  <h2 className={s.sectionTitle}>
-                    {section.name}
-                    <span className={s.count}>{sectionItems.length}</span>
-                  </h2>
-                  <ul>
-                    <AnimatePresence initial={false}>
-                      {sectionItems.map((item) => (
-                        <ItemRow
-                          key={item.id}
-                          item={item}
-                          onOptions={() => setOptionsFor(item.id)}
-                        />
-                      ))}
-                    </AnimatePresence>
-                  </ul>
-                </motion.section>
+              {groups.map(({ group: section, items: sectionItems }) => (
+                <ListGroup key={section.id} title={section.name} count={sectionItems.length}>
+                  <AnimatePresence initial={false}>
+                    {sectionItems.map((item) => (
+                      <ItemRow key={item.id} item={item} onOptions={() => setOptionsFor(item.id)} />
+                    ))}
+                  </AnimatePresence>
+                </ListGroup>
               ))}
             </AnimatePresence>
 
             {inCart.length > 0 && (
               <motion.section layout className={s.cart}>
-                <button
-                  type="button"
-                  className={s.cartToggle}
-                  aria-expanded={cartOpen}
-                  onClick={() => setCartOpen((open) => !open)}
-                >
-                  <motion.span animate={{ rotate: cartOpen ? 90 : 0 }} className={s.chevron}>
-                    <ChevronRight />
-                  </motion.span>
-                  In cart
-                  <motion.span
-                    key={inCart.length}
-                    className={s.count}
-                    initial={{ scale: 1.4 }}
-                    animate={{ scale: 1 }}
+                <div className={s.cartHeader}>
+                  <button
+                    type="button"
+                    className={s.cartToggle}
+                    aria-expanded={cartOpen}
+                    onClick={() => setCartOpen((open) => !open)}
                   >
-                    {inCart.length}
-                  </motion.span>
-                </button>
+                    <motion.span animate={{ rotate: cartOpen ? 90 : 0 }} className={s.chevron}>
+                      <ChevronRight />
+                    </motion.span>
+                    In cart
+                    <motion.span
+                      key={inCart.length}
+                      className={s.count}
+                      initial={{ scale: 1.4 }}
+                      animate={{ scale: 1 }}
+                    >
+                      {inCart.length}
+                    </motion.span>
+                  </button>
+                  <Button size="sm" icon={<PackageCheck />} onClick={() => setPuttingAway(inCart)}>
+                    Put away
+                  </Button>
+                </div>
                 <AnimatePresence initial={false}>
                   {cartOpen && (
                     <motion.ul
@@ -205,6 +196,8 @@ export function ShoppingPage() {
       </Page>
 
       <GenerateSheet open={generateOpen} onClose={() => setGenerateOpen(false)} />
+      <CardsSheet open={cardsOpen} onClose={() => setCardsOpen(false)} />
+      <PutAwaySheet items={puttingAway} onClose={() => setPuttingAway(null)} />
       <ItemSheet
         item={items.find((item) => item.id === optionsFor) ?? null}
         sections={sections}

@@ -1,4 +1,4 @@
-import { Check, RotateCcw, Utensils, X } from "lucide-react";
+import { Check, ChefHat, RotateCcw, Utensils, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { Link } from "react-router";
@@ -9,6 +9,8 @@ import { Chip, ChipRow } from "../../ui/Chip";
 import { Input } from "../../ui/Field";
 import { Sheet } from "../../ui/Sheet";
 import { Stepper } from "../../ui/Stepper";
+import { useInventory } from "../inventory/inventory";
+import { cookMeal } from "../inventory/stock";
 import { RecipeFilterBar } from "../recipes/RecipeFilterBar";
 import { useRecipes, type Recipe } from "../recipes/recipes";
 import { useRecipeFilter } from "../recipes/useRecipeFilter";
@@ -26,10 +28,14 @@ interface MealSheetProps {
   onClose: () => void;
 }
 
-/** Edits one lunch/dinner slot. Changes are saved when the sheet closes. */
+/**
+ * Edits one lunch/dinner slot. Changes are saved when the sheet closes, together with what marking
+ * it cooked (or no longer cooked) changes in the inventory.
+ */
 export function MealSheet({ target, onClose }: MealSheetProps) {
   const { days } = usePlan();
   const { recipes, byId } = useRecipes();
+  const { stock } = useInventory();
   const filter = useRecipeFilter(recipes);
   const [openedFor, setOpenedFor] = useState<MealTarget | null>(null);
   const [original, setOriginal] = useState<Slot>(EMPTY_SLOT);
@@ -47,7 +53,10 @@ export function MealSheet({ target, onClose }: MealSheetProps) {
 
   const close = () => {
     // Every edit replaces the draft object, so an untouched draft is still the original.
-    if (target && draft !== original) saveSlot(target.day, target.meal, draft);
+    if (target && draft !== original) {
+      const { slot, changes } = cookMeal(original, draft, byId, stock);
+      saveSlot(target.day, target.meal, slot, changes);
+    }
     onClose();
   };
 
@@ -77,6 +86,8 @@ export function MealSheet({ target, onClose }: MealSheetProps) {
     }));
 
   const setNote = (note: string) => setDraft((current) => ({ ...current, note }));
+
+  const toggleCooked = () => setDraft((current) => ({ ...current, cooked: !current.cooked }));
 
   const shown = target ?? openedFor;
   const leftoverNames = shown ? recipeNames(previousSlot(days, shown.day, shown.meal), byId) : [];
@@ -141,6 +152,21 @@ export function MealSheet({ target, onClose }: MealSheetProps) {
             </motion.ul>
           )}
         </AnimatePresence>
+
+        {draft.recipes.length > 0 && (
+          <div className={s.cooked}>
+            <ChipRow>
+              <Chip icon={<ChefHat />} selected={Boolean(draft.cooked)} onClick={toggleCooked}>
+                Cooked
+              </Chip>
+            </ChipRow>
+            <p className={s.hint}>
+              {draft.cooked
+                ? "Its ingredients are taken out of the inventory."
+                : "Mark it once it's cooked to take its ingredients out of the inventory."}
+            </p>
+          </div>
+        )}
 
         <div className={s.note}>
           <Input

@@ -117,6 +117,24 @@ const sections: Record<string, string> = {
   "coconut milk": "pantry",
 };
 
+const locations: Record<string, string> = {
+  rice: "pantry",
+  "kidney beans": "cans",
+  "coconut milk": "cans",
+  "chicken breast": "freezer",
+  parmesan: "fridge",
+};
+
+const amount = (quantity: number, unit: string) => ({ quantity, unit });
+
+const inventory = {
+  rice: { name: "Rice", amounts: [amount(1000, "g")], always: false },
+  "kidney beans": { name: "Kidney beans", amounts: [amount(1, "cans")], always: false },
+  parmesan: { name: "Parmesan", amounts: [amount(100, "g")], always: false },
+  salt: { name: "Salt", amounts: [], always: true },
+  "olive oil": { name: "Olive oil", amounts: [], always: true },
+};
+
 const email = (process.argv[2] ?? "you@example.com").toLowerCase();
 
 await put(`members/${email}`, { name: "Seeded member" });
@@ -125,7 +143,11 @@ for (const [key, sectionId] of Object.entries(sections)) {
   await put(`ingredients/${encodeURIComponent(key)}`, {
     name: key[0].toUpperCase() + key.slice(1),
     sectionId,
+    ...(locations[key] && { locationId: locations[key] }),
   });
+}
+for (const [key, item] of Object.entries(inventory)) {
+  await put(`inventory/${encodeURIComponent(key)}`, item);
 }
 await put(`plan/${dayKey(0)}`, {
   dinner: { recipes: [{ recipeId: "chili", servings: 4 }], note: "" },
@@ -139,5 +161,5 @@ await put(`plan/${dayKey(3)}`, {
 });
 
 console.log(
-  `Seeded emulator: member ${email}, ${Object.keys(recipes).length} recipes, 3 planned days.`,
+  `Seeded emulator: member ${email}, ${Object.keys(recipes).length} recipes, 3 planned days, ${Object.keys(inventory).length} inventory items.`,
 );

@@ -1,71 +1,73 @@
-import { Pencil, Plus, WalletCards } from "lucide-react";
+import { Barcode, Pencil, Plus, QrCode } from "lucide-react";
 import { useState } from "react";
 import { Button, IconButton } from "../../ui/Button";
 import { ConfirmSheet } from "../../ui/ConfirmSheet";
-import { EmptyState } from "../../ui/EmptyState";
-import { Card, Page } from "../../ui/Page";
-import { PageHeader } from "../../ui/PageHeader";
-import { CardCode } from "./CardCode";
+import { Sheet } from "../../ui/Sheet";
 import { deleteCard, useCards, type LoyaltyCard } from "./cards";
 import { CardSheet, type CardTarget } from "./CardSheet";
-import s from "./CardsPage.module.css";
+import s from "./CardsSheet.module.css";
 import { CodeOverlay } from "./CodeOverlay";
 
-export function CardsPage() {
+interface CardsSheetProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+/**
+ * The store loyalty cards; tap one to show its code full size at the register. The sheet closes
+ * before the code or the card editor opens, so modals never stack.
+ */
+export function CardsSheet({ open, onClose }: CardsSheetProps) {
   const { cards, loading } = useCards();
   const [target, setTarget] = useState<CardTarget | null>(null);
   const [shown, setShown] = useState<LoyaltyCard | null>(null);
   // Kept after the confirmation closes so its text stays put while it animates out.
   const [deleting, setDeleting] = useState<LoyaltyCard | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const addCard = () => setTarget({ card: null });
+
+  const edit = (card: LoyaltyCard | null) => {
+    onClose();
+    setTarget({ card });
+  };
 
   return (
     <>
-      <PageHeader
-        title="Cards"
-        actions={
-          <Button variant="primary" size="sm" icon={<Plus />} onClick={addCard}>
-            New
+      <Sheet
+        open={open}
+        onClose={onClose}
+        title="Loyalty cards"
+        footer={
+          <Button icon={<Plus />} onClick={() => edit(null)}>
+            Add card
           </Button>
         }
-      />
-      <Page>
+      >
         {loading ? null : cards.length === 0 ? (
-          <EmptyState
-            icon={<WalletCards />}
-            title="No cards yet"
-            text="Add your store loyalty cards to show them at the register."
-          >
-            <Button variant="primary" icon={<Plus />} onClick={addCard}>
-              Add a card
-            </Button>
-          </EmptyState>
+          <p className={s.muted}>Add your store loyalty cards to show them at the register.</p>
         ) : (
-          <div className={s.list}>
+          <ul className={s.list}>
             {cards.map((card) => (
-              <Card
-                key={card.id}
-                title={card.name}
-                actions={
-                  <IconButton label="Edit card" onClick={() => setTarget({ card })}>
-                    <Pencil />
-                  </IconButton>
-                }
-              >
+              <li key={card.id} className={s.row}>
                 <button
                   type="button"
-                  className={s.codeButton}
+                  className={s.show}
                   aria-label={`Show ${card.name} full size`}
-                  onClick={() => setShown(card)}
+                  onClick={() => {
+                    onClose();
+                    setShown(card);
+                  }}
                 >
-                  <CardCode format={card.format} value={card.value} />
+                  <span className={s.icon}>{card.format === "qr" ? <QrCode /> : <Barcode />}</span>
+                  <span className={s.name}>{card.name}</span>
                 </button>
-              </Card>
+                <IconButton label={`Edit ${card.name}`} onClick={() => edit(card)}>
+                  <Pencil />
+                </IconButton>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
-      </Page>
+      </Sheet>
 
       <CodeOverlay card={shown} onClose={() => setShown(null)} />
       <CardSheet

@@ -124,10 +124,20 @@
   color: var(--text-muted);
 }
 
-.note svg {
+.note svg,
+.cooked svg {
   width: 14px;
   height: 14px;
   flex: none;
+}
+
+.cooked {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
 }
 
 /* Narrow 7-column week grid on wide screens: stack the meal label above its content. */

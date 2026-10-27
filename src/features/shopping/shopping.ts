@@ -5,6 +5,8 @@ import { liveCollection, liveDocument, useLive } from "../../lib/live";
 import { persist } from "../../lib/persist";
 import { addAmounts, type Ingredient } from "../../lib/units";
 import { setIngredientSection } from "../ingredients/catalog";
+import { addStockChanges } from "../inventory/inventory";
+import type { StockChanges } from "../inventory/stock";
 import type { GeneratedItem } from "./buildList";
 
 export interface ShoppingItem extends GeneratedItem {
@@ -77,4 +79,12 @@ export function deleteItems(items: ShoppingItem[]) {
   const batch = writeBatch(db);
   for (const item of items) batch.delete(doc(itemsRef(), item.id));
   persist(batch.commit(), "Removing items");
+}
+
+/** Removes bought items from the list and adds them to the inventory, in one write. */
+export function putAwayItems(items: ShoppingItem[], stock: StockChanges) {
+  const batch = writeBatch(db);
+  for (const item of items) batch.delete(doc(itemsRef(), item.id));
+  addStockChanges(batch, stock);
+  persist(batch.commit(), "Putting away");
 }

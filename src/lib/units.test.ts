@@ -5,9 +5,11 @@ import {
   formatAmounts,
   ingredientKey,
   normalizeUnit,
+  parseAmounts,
   parseIngredientLine,
   parseQuantity,
   scaleAmount,
+  subtractAmounts,
 } from "./units";
 
 describe("parseQuantity", () => {
@@ -118,6 +120,69 @@ describe("addAmounts", () => {
         { quantity: 50, unit: "g" },
       ]),
     ).toEqual([{ quantity: 50, unit: "g" }]);
+  });
+});
+
+describe("subtractAmounts", () => {
+  it("subtracts per unit after converting metric units", () => {
+    expect(
+      subtractAmounts(
+        [
+          { quantity: 1, unit: "kg" },
+          { quantity: 2, unit: "" },
+        ],
+        [
+          { quantity: 250, unit: "g" },
+          { quantity: 3, unit: "" },
+        ],
+      ),
+    ).toEqual({
+      left: [{ quantity: 750, unit: "g" }],
+      taken: [
+        { quantity: 250, unit: "g" },
+        { quantity: 2, unit: "" },
+      ],
+      missing: [{ quantity: 1, unit: "" }],
+    });
+  });
+
+  it("cannot take a unit that is not there", () => {
+    expect(subtractAmounts([{ quantity: 500, unit: "g" }], [{ quantity: 2, unit: "pcs" }])).toEqual(
+      {
+        left: [{ quantity: 500, unit: "g" }],
+        taken: [],
+        missing: [{ quantity: 2, unit: "pcs" }],
+      },
+    );
+  });
+
+  it("covers a need without a quantity with any amount", () => {
+    expect(subtractAmounts([{ quantity: 1, unit: "l" }], [{ quantity: null, unit: "" }])).toEqual({
+      left: [{ quantity: 1000, unit: "ml" }],
+      taken: [],
+      missing: [],
+    });
+    expect(subtractAmounts([], [{ quantity: null, unit: "" }]).missing).toEqual([
+      { quantity: null, unit: "" },
+    ]);
+  });
+});
+
+describe("parseAmounts", () => {
+  it("reads amounts in the format formatAmounts writes", () => {
+    expect(parseAmounts("1.5 kg")).toEqual([{ quantity: 1500, unit: "g" }]);
+    expect(parseAmounts("3")).toEqual([{ quantity: 3, unit: "" }]);
+    expect(parseAmounts("2 + 100 g")).toEqual([
+      { quantity: 2, unit: "" },
+      { quantity: 100, unit: "g" },
+    ]);
+    expect(parseAmounts("1½ tins")).toEqual([{ quantity: 1.5, unit: "cans" }]);
+  });
+
+  it("returns nothing for empty text and null for text that is not an amount", () => {
+    expect(parseAmounts("  ")).toEqual([]);
+    expect(parseAmounts("some rice")).toBeNull();
+    expect(parseAmounts("2 +")).toBeNull();
   });
 });
 

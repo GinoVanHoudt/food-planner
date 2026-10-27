@@ -7,6 +7,7 @@ import { Field, Input } from "../../ui/Field";
 import { Sheet } from "../../ui/Sheet";
 import { showToast } from "../../ui/toast";
 import { useCatalog } from "../ingredients/catalog";
+import { useInventory } from "../inventory/inventory";
 import { usePlan } from "../planner/plan";
 import { useRecipes } from "../recipes/recipes";
 import { buildList } from "./buildList";
@@ -33,13 +34,23 @@ export function GenerateSheet({ open, onClose, onCreated }: GenerateSheetProps) 
   const plan = usePlan();
   const recipes = useRecipes();
   const { sectionOf } = useCatalog();
+  const inventory = useInventory();
   const shopping = useShopping();
   // The current list must be loaded, or its generated items would not be replaced.
-  const loading = plan.loading || recipes.loading || shopping.loading;
+  const loading = plan.loading || recipes.loading || inventory.loading || shopping.loading;
 
   const result = useMemo(
-    () => buildList({ days: plan.days, recipes: recipes.byId, from, to, sectionOf }),
-    [plan.days, recipes.byId, from, to, sectionOf],
+    () =>
+      buildList({
+        days: plan.days,
+        recipes: recipes.byId,
+        from,
+        to,
+        today,
+        stock: inventory.stock,
+        sectionOf,
+      }),
+    [plan.days, recipes.byId, from, to, today, inventory.stock, sectionOf],
   );
   const replacesItems = shopping.items.some((item) => !item.manual);
 
@@ -99,6 +110,7 @@ export function GenerateSheet({ open, onClose, onCreated }: GenerateSheetProps) 
         </div>
         <p className={s.summary}>
           {plural(result.mealCount, "planned meal")} · {plural(result.items.length, "item")}
+          {result.atHome > 0 && ` · ${result.atHome} already at home`}
         </p>
         {result.mealCount === 0 && (
           <p className={s.muted}>No meals with recipes are planned in these days.</p>

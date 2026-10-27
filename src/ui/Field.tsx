@@ -24,6 +24,10 @@ export function Input({ className, ...rest }: ComponentProps<"input">) {
   return <input className={cx(s.input, className)} {...rest} />;
 }
 
+export function Select({ className, ...rest }: ComponentProps<"select">) {
+  return <select className={cx(s.input, className)} {...rest} />;
+}
+
 export function Textarea({ className, ...rest }: ComponentProps<"textarea">) {
   return <textarea className={cx(s.input, s.textarea, className)} {...rest} />;
 }

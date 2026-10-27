@@ -1,4 +1,4 @@
-import { Plus, RotateCcw, StickyNote } from "lucide-react";
+import { ChefHat, Plus, RotateCcw, StickyNote } from "lucide-react";
 import { motion } from "motion/react";
 import { formatDayShort, relativeDayName, type DayKey } from "../../lib/dates";
 import { cx } from "../../lib/cx";
@@ -54,13 +54,14 @@ function MealRow({ meal, slot, recipes, onClick }: MealRowProps) {
   const planned = slot?.recipes ?? [];
   const note = slot?.note ?? "";
   const empty = planned.length === 0 && !note;
+  const cooked = Boolean(slot?.cooked);
   return (
     <motion.button
       type="button"
       className={s.meal}
       onClick={onClick}
       whileTap={{ scale: 0.98 }}
-      aria-label={`${MEAL_LABELS[meal]}: ${empty ? "nothing planned, add" : "edit"}`}
+      aria-label={`${MEAL_LABELS[meal]}: ${empty ? "nothing planned, add" : cooked ? "cooked, edit" : "edit"}`}
     >
       <span className={cx(s.mealLabel, s[meal])}>{MEAL_LABELS[meal]}</span>
       <span className={s.content}>
@@ -83,6 +84,11 @@ function MealRow({ meal, slot, recipes, onClick }: MealRowProps) {
               <StickyNote aria-hidden />
             )}
             {note}
+          </span>
+        )}
+        {cooked && (
+          <span className={s.cooked}>
+            <ChefHat aria-hidden /> Cooked
           </span>
         )}
       </span>

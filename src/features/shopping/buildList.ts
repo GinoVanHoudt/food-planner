@@ -1,7 +1,8 @@
-import { dayRange, type DayKey } from "../../lib/dates";
+import { addDays, dayRange, type DayKey } from "../../lib/dates";
 import { byName } from "../../lib/sort";
-import { addAmounts, ingredientKey, isCountable, scaleAmount, type Amount } from "../../lib/units";
-import { MEALS, type DayPlan } from "../planner/types";
+import { isCountable, type Amount } from "../../lib/units";
+import { applyChanges, consume, take, type Stock } from "../inventory/stock";
+import { collectNeeds, MEALS, type DayPlan, type Slot } from "../planner/types";
 import type { Recipe } from "../recipes/recipes";
 
 export interface GeneratedItem {
@@ -17,6 +18,9 @@ interface BuildListInput {
   recipes: Map<string, Recipe>;
   from: DayKey;
   to: DayKey;
+  /** Meals from today until `from` that are not cooked yet will still use some of the stock. */
+  today: DayKey;
+  stock: Stock;
   sectionOf: (name: string) => string;
 }
 
@@ -29,46 +33,44 @@ function roundForShopping({ quantity, unit }: Amount): Amount {
   };
 }
 
-/**
- * Collects the ingredients of every recipe planned between `from` and `to`, scaled to the planned
- * servings, with the same ingredient (by name) merged and its amounts added up per unit.
- */
-export function buildList({ days, recipes, from, to, sectionOf }: BuildListInput) {
-  const groups = new Map<string, { name: string; amounts: Amount[]; sources: Set<string> }>();
-  let mealCount = 0;
+/** The meals with recipes from `from` to `to` (inclusive) that are not cooked yet. */
+function mealsToCook(days: Map<DayKey, DayPlan>, from: DayKey, to: DayKey): Slot[] {
+  return dayRange(from, to).flatMap((day) =>
+    MEALS.flatMap((meal) => {
+      const slot = days.get(day)?.[meal];
+      return slot && slot.recipes.length > 0 && !slot.cooked ? [slot] : [];
+    }),
+  );
+}
 
-  for (const day of dayRange(from, to)) {
-    for (const meal of MEALS) {
-      const planned = days.get(day)?.[meal]?.recipes ?? [];
-      if (planned.length > 0) mealCount++;
-      for (const { recipeId, servings } of planned) {
-        const recipe = recipes.get(recipeId);
-        if (!recipe) continue;
-        const factor = servings / (recipe.servings || 1);
-        for (const ingredient of recipe.ingredients) {
-          const key = ingredientKey(ingredient.name);
-          if (!key) continue;
-          const group = groups.get(key) ?? {
-            name: ingredient.name.trim(),
-            amounts: [],
-            sources: new Set(),
-          };
-          group.amounts.push(scaleAmount(ingredient, factor));
-          group.sources.add(recipe.name);
-          groups.set(key, group);
-        }
-      }
+/**
+ * Collects the ingredients of every meal planned between `from` and `to` that is not cooked yet,
+ * scaled to the planned servings and merged by name, minus what is already at home. The stock that
+ * the meals before `from` will use is set aside first.
+ */
+export function buildList({ days, recipes, from, to, today, stock, sectionOf }: BuildListInput) {
+  const before = mealsToCook(days, today, addDays(from, -1));
+  const available = applyChanges(stock, consume(stock, collectNeeds(before, recipes)).changes);
+
+  const meals = mealsToCook(days, from, to);
+  const items: GeneratedItem[] = [];
+  let atHome = 0;
+  for (const [key, need] of collectNeeds(meals, recipes)) {
+    const amounts = take(available.get(key), need.amounts)
+      .missing.map(roundForShopping)
+      // Leftovers too small to show (e.g. 0.001 g after scaling) do not need buying.
+      .filter(({ quantity }) => quantity !== 0);
+    if (amounts.length === 0) {
+      atHome++;
+      continue;
     }
+    items.push({
+      name: need.name,
+      amounts,
+      sectionId: sectionOf(need.name),
+      sources: need.sources,
+    });
   }
 
-  const items: GeneratedItem[] = [...groups.values()]
-    .map((group) => ({
-      name: group.name,
-      amounts: addAmounts(group.amounts).map(roundForShopping),
-      sectionId: sectionOf(group.name),
-      sources: [...group.sources],
-    }))
-    .sort(byName);
-
-  return { items, mealCount };
+  return { items: items.sort(byName), mealCount: meals.length, atHome };
 }

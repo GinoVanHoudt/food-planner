@@ -1,9 +1,10 @@
 # Food Planner
 
-Mobile-first PWA for two people to plan lunch and dinner for the next 14 days, manage recipes, and
-turn the plan into a shared shopping list that is checked off in the store, with the store loyalty
-cards at hand as QR codes or barcodes. `PLAN.md` holds the original plan and decisions; `README.md`
-the setup and deploy steps.
+Mobile-first PWA for two people to plan lunch and dinner for the next 14 days, manage recipes, keep
+an inventory of what is at home, and turn the plan into a shared shopping list (minus what is at
+home) that is checked off in the store, with the store loyalty cards at hand as QR codes or barcodes.
+Bought items are put away into the inventory; marking a meal cooked takes its ingredients out.
+`PLAN.md` holds the original plan and decisions; `README.md` the setup and deploy steps.
 
 ## Stack
 
@@ -37,7 +38,7 @@ commit straight to `main` and push it (which deploys).
 ```
 src/
 ├─ app/        Root (auth gate + global overlays), router, AppShell (nav + page transitions)
-├─ features/   one folder per feature: auth, planner, recipes, shopping, cards, settings, ingredients, pwa
+├─ features/   one folder per feature: auth, planner, recipes, shopping, inventory, cards, settings, ingredients, pwa
 ├─ lib/        firebase init, live Firestore stores, dates, units, small hooks
 ├─ ui/         shared presentational components (Button, Sheet, Stepper, Chip, Field, Page…)
 └─ styles/     tokens.css (all colours/spacing, light + dark) and global.css
@@ -46,15 +47,21 @@ src/
 ## Conventions
 
 - **Data access**: each feature has one data module (`recipes/recipes.ts`, `planner/plan.ts`,
-  `shopping/shopping.ts`, `cards/cards.ts`, `settings/sections.ts`, `ingredients/catalog.ts`) with a
-  `liveCollection` / `liveDocument` store (`lib/live.ts`), a `use…()` hook and write functions.
-  Components never call Firestore directly.
+  `shopping/shopping.ts`, `inventory/inventory.ts`, `cards/cards.ts`, `settings/sections.ts`,
+  `settings/locations.ts`, `ingredients/catalog.ts`) with a `liveCollection` / `liveDocument` store
+  (`lib/live.ts`), a `use…()` hook and write functions. Components never call Firestore directly.
+  Writes that touch the inventory together with another collection go in one batch
+  (`addStockChanges`).
 - **Writes are fire-and-forget**: wrap them in `persist()` (`lib/persist.ts`) and never await them in
   the UI. Offline writes only resolve once back online, but the local cache updates immediately.
   Create ids client-side with `doc(collection(...))` instead of `addDoc`.
 - **Pure logic stays Firebase-free** so it can be unit-tested: `lib/dates.ts`, `lib/units.ts`,
-  `planner/types.ts`, `shopping/buildList.ts`, `cards/barcode.ts`. Use `import type` for types from
-  data modules.
+  `lib/group.ts`, `planner/types.ts`, `shopping/buildList.ts`, `inventory/stock.ts`, `cards/barcode.ts`. Use
+  `import type` for types from data modules.
+- **Inventory** items are keyed by `ingredientKey`, like the catalog, so they match recipe
+  ingredients by name. Amounts are only subtracted within the same unit (after g/ml conversion); an
+  item without amounts means "we have some" and covers any need, and `always` items are never on a
+  list or used up.
 - **Dates** are local-time `DayKey` strings (`YYYY-MM-DD`); compare them as strings.
 - **Quantities** are stored per recipe servings and scaled when planned; metric units are summed in
   base units (g/ml) and formatted back (`formatAmount`).
@@ -82,9 +89,12 @@ src/
 ```
 members/{email}        { name }                                          console-managed allowlist
 recipes/{id}           { name, servings, ingredients[{name, quantity|null, unit}], instructions, sourceUrl, tags[] }
-plan/{YYYY-MM-DD}      { lunch?: Slot, dinner?: Slot }   Slot = { recipes[{recipeId, servings}], note }
-ingredients/{key}      { name, sectionId }                               remembered store section per ingredient
+plan/{YYYY-MM-DD}      { lunch?: Slot, dinner?: Slot }
+                       Slot = { recipes[{recipeId, servings}], note, cooked?, taken?[{name, amounts[]}] }
+ingredients/{key}      { name, sectionId?, locationId? }                 remembered store section and home location
+inventory/{key}        { name, amounts[], always }                       what is at home, key = ingredientKey
 settings/sections      { sections[{id, name}] }                          store walking order
+settings/locations     { locations[{id, name}] }                         inventory locations (fridge, freezer…)
 settings/shopping      { from, to }                                      range of the current list
 shoppingItems/{id}     { name, amounts[], sectionId, checked, manual, sources[] }
 cards/{id}             { name, format: 'qr'|'ean13', value }             store loyalty cards

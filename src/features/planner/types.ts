@@ -1,4 +1,6 @@
 import { addDays, type DayKey } from "../../lib/dates";
+import { addAmounts, ingredientKey, scaleAmount, type Amount } from "../../lib/units";
+import type { StockLine } from "../inventory/stock";
 import type { Recipe } from "../recipes/recipes";
 
 export type Meal = "lunch" | "dinner";
@@ -15,6 +17,10 @@ export interface PlannedRecipe {
 export interface Slot {
   recipes: PlannedRecipe[];
   note: string;
+  /** Marked as cooked: its ingredients were taken out of the inventory. */
+  cooked?: boolean;
+  /** What cooking took out of the inventory, put back if the meal is no longer cooked. */
+  taken?: StockLine[];
 }
 
 /** One document per day, keyed by its DayKey. */
@@ -41,4 +47,45 @@ export function previousSlot(
 
 export function recipeNames(slot: Slot | undefined, recipes: Map<string, Recipe>): string[] {
   return (slot?.recipes ?? []).flatMap(({ recipeId }) => recipes.get(recipeId)?.name ?? []);
+}
+
+/** An ingredient that planned meals need, with its amounts added up per unit. */
+export interface Need {
+  name: string;
+  amounts: Amount[];
+  /** Names of the recipes that need it. */
+  sources: string[];
+}
+
+/**
+ * The ingredients of the recipes planned in `slots`, scaled to the planned servings and merged by
+ * name (keyed by `ingredientKey`). Deleted recipes are skipped.
+ */
+export function collectNeeds(slots: Slot[], recipes: Map<string, Recipe>): Map<string, Need> {
+  const groups = new Map<string, { name: string; amounts: Amount[]; sources: Set<string> }>();
+  for (const slot of slots) {
+    for (const { recipeId, servings } of slot.recipes) {
+      const recipe = recipes.get(recipeId);
+      if (!recipe) continue;
+      const factor = servings / (recipe.servings || 1);
+      for (const ingredient of recipe.ingredients) {
+        const key = ingredientKey(ingredient.name);
+        if (!key) continue;
+        const group = groups.get(key) ?? {
+          name: ingredient.name.trim(),
+          amounts: [],
+          sources: new Set(),
+        };
+        group.amounts.push(scaleAmount(ingredient, factor));
+        group.sources.add(recipe.name);
+        groups.set(key, group);
+      }
+    }
+  }
+  return new Map(
+    [...groups].map(([key, group]) => [
+      key,
+      { name: group.name, amounts: addAmounts(group.amounts), sources: [...group.sources] },
+    ]),
+  );
 }

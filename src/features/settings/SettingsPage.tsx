@@ -4,9 +4,11 @@ import { Button } from "../../ui/Button";
 import { Chip, ChipRow } from "../../ui/Chip";
 import { Card, Page } from "../../ui/Page";
 import { PageHeader } from "../../ui/PageHeader";
+import { OrderedListEditor } from "../../ui/OrderedListEditor";
 import { useAuth } from "../auth/useAuth";
 import { useInstallPrompt } from "../pwa/useInstallPrompt";
-import { SectionsEditor } from "./SectionsEditor";
+import { OTHER_LOCATION_ID, saveLocations, useLocations } from "./locations";
+import { OTHER_SECTION_ID, saveSections, useSections } from "./sections";
 import s from "./SettingsPage.module.css";
 import { useTheme, type ThemePreference } from "./useTheme";
 
@@ -20,19 +22,41 @@ export function SettingsPage() {
   const { user, signOut } = useAuth();
   const install = useInstallPrompt();
   const theme = useTheme();
+  const sections = useSections();
+  const locations = useLocations();
 
   return (
     <>
       <PageHeader title="Settings" />
       <Page>
         <div className={s.columns}>
-          <Card title="Store sections">
-            <p className={s.hint}>
-              Drag the sections into the order you walk through your store. The shopping list
-              follows this order.
-            </p>
-            <SectionsEditor />
-          </Card>
+          <div className={s.stack}>
+            <Card title="Store sections">
+              <p className={s.hint}>
+                Drag the sections into the order you walk through your store. The shopping list
+                follows this order.
+              </p>
+              <OrderedListEditor
+                items={sections}
+                onSave={saveSections}
+                fixedId={OTHER_SECTION_ID}
+                noun="section"
+                placeholder="New section, e.g. Spices"
+              />
+            </Card>
+            <Card title="Inventory locations">
+              <p className={s.hint}>
+                The places at home where you keep food, in the order you like.
+              </p>
+              <OrderedListEditor
+                items={locations}
+                onSave={saveLocations}
+                fixedId={OTHER_LOCATION_ID}
+                noun="location"
+                placeholder="New location, e.g. Cellar"
+              />
+            </Card>
+          </div>
           <div className={s.stack}>
             <Card title="App">
               <div className={s.group}>

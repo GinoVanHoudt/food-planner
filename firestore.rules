@@ -41,15 +41,31 @@ service cloud.firestore {
         && isString(request.resource.data.sourceUrl, 2000);
     }
 
+    // A planned meal, if there is one: `cooked` and what cooking it took (`taken`) are optional.
+    function isMealOrMissing(data, meal) {
+      return !(meal in data) || (
+        data[meal] is map
+        && (!('cooked' in data[meal]) || data[meal].cooked is bool)
+        && (!('taken' in data[meal]) || (data[meal].taken is list && data[meal].taken.size() <= 200))
+      );
+    }
+
     // One document per day, id YYYY-MM-DD.
     match /plan/{day} {
       allow read: if isMember();
-      allow write: if isMember() && day.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+      allow delete: if isMember() && day.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+      allow create, update: if isMember()
+        && day.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && isMealOrMissing(request.resource.data, 'lunch')
+        && isMealOrMissing(request.resource.data, 'dinner');
     }
 
     match /ingredients/{key} {
       allow read: if isMember();
-      allow write: if isMember() && isString(request.resource.data.name, 200);
+      allow write: if isMember()
+        && isString(request.resource.data.name, 200)
+        && (!('locationId' in request.resource.data)
+          || isString(request.resource.data.locationId, 100));
     }
 
     match /shoppingItems/{itemId} {
@@ -57,6 +73,17 @@ service cloud.firestore {
       allow create, update: if isMember()
         && isString(request.resource.data.name, 200)
         && request.resource.data.checked is bool;
+    }
+
+    // One document per ingredient, id = its ingredient key. No amounts means "we have some".
+    match /inventory/{key} {
+      allow read, delete: if isMember();
+      allow create, update: if isMember()
+        && isString(request.resource.data.name, 200)
+        && request.resource.data.name.size() > 0
+        && request.resource.data.amounts is list
+        && request.resource.data.amounts.size() <= 20
+        && request.resource.data.always is bool;
     }
 
     match /cards/{cardId} {
@@ -71,7 +98,7 @@ service cloud.firestore {
 
     match /settings/{setting} {
       allow read: if isMember();
-      allow write: if isMember() && setting in ['sections', 'shopping'];
+      allow write: if isMember() && setting in ['sections', 'shopping', 'locations'];
     }
   }
 }
