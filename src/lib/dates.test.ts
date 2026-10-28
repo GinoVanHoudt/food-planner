@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vite-plus/test";
-import { addDays, dayRange, formatDay, formatRange, fromDayKey, toDayKey } from "./dates";
+import {
+  addDays,
+  dayRange,
+  formatDate,
+  formatDay,
+  formatRange,
+  fromDayKey,
+  toDayKey,
+} from "./dates";
 
 describe("day keys", () => {
   it("round-trips local dates", () => {
@@ -35,6 +43,11 @@ describe("formatting", () => {
     expect(formatDay("2026-10-27", "2026-10-26")).toBe("Tomorrow");
     expect(formatDay("2026-10-25", "2026-10-26")).toBe("Yesterday");
     expect(formatDay("2026-10-28", "2026-10-26")).toBe("Wed 28 Oct");
+  });
+
+  it("adds the year to dates in another year", () => {
+    expect(formatDate("2026-11-04", "2026-10-26")).toBe("4 Nov");
+    expect(formatDate("2027-01-04", "2026-10-26")).toBe("4 Jan 2027");
   });
 
   it("formats ranges", () => {

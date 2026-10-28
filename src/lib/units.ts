@@ -43,6 +43,7 @@ const UNIT_ALIASES: Record<string, string[]> = {
   slices: ["slice", "slices"],
   pinch: ["pinch", "pinches"],
   cups: ["cup", "cups"],
+  portions: ["portion", "portions"],
 };
 
 const UNIT_LOOKUP = new Map(
@@ -60,7 +61,7 @@ const BASE_UNITS: Record<string, { unit: string; factor: number }> = {
 };
 
 /** Units you buy whole, so shopping quantities are rounded up. */
-const COUNTABLE_UNITS = new Set(["", "pcs", "cloves", "cans", "pack", "jar", "bunch"]);
+const COUNTABLE_UNITS = new Set(["", "pcs", "cloves", "cans", "pack", "jar", "bunch", "portions"]);
 
 export function normalizeUnit(unit: string): string {
   const cleaned = unit.trim().toLowerCase().replace(/\.$/, "");

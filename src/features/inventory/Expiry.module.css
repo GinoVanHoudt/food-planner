@@ -1,0 +1,15 @@
+.expiry {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.soon {
+  font-weight: 600;
+  color: var(--warning);
+}
+
+.expired {
+  font-weight: 600;
+  color: var(--danger);
+}

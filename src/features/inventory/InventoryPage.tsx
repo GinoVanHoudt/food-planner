@@ -1,4 +1,4 @@
-import { Plus, Refrigerator } from "lucide-react";
+import { Plus, Refrigerator, Soup } from "lucide-react";
 import { AnimatePresence } from "motion/react";
 import { useState, type FormEvent } from "react";
 import { groupInOrder } from "../../lib/group";
@@ -11,6 +11,7 @@ import { Page } from "../../ui/Page";
 import { PageHeader } from "../../ui/PageHeader";
 import { useCatalog } from "../ingredients/catalog";
 import { OTHER_LOCATION_ID, useLocations } from "../settings/locations";
+import { Expiry } from "./Expiry";
 import { saveStock, useInventory } from "./inventory";
 import { InventoryItemSheet, type InventoryTarget } from "./InventoryItemSheet";
 import s from "./InventoryPage.module.css";
@@ -22,7 +23,7 @@ const ALWAYS_GROUP = { id: "always", name: "Always at home" };
 export function InventoryPage() {
   const { items, stock, loading } = useInventory();
   const locations = useLocations();
-  const { locationOf } = useCatalog();
+  const { locationOf, isMeal } = useCatalog();
   const [target, setTarget] = useState<InventoryTarget | null>(null);
   const [newItem, setNewItem] = useState("");
 
@@ -83,7 +84,15 @@ export function InventoryPage() {
                 {groupItems.map((item) => (
                   <li key={item.id}>
                     <button type="button" className={s.item} onClick={() => setTarget({ item })}>
-                      <span className={s.name}>{capitalize(item.name)}</span>
+                      <span className={s.text}>
+                        <span className={s.name}>
+                          {isMeal(item.name) && (
+                            <Soup className={s.mealIcon} role="img" aria-label="Full meal" />
+                          )}
+                          {capitalize(item.name)}
+                        </span>
+                        {item.expires && <Expiry date={item.expires} />}
+                      </span>
                       {!item.always && (
                         <span className={s.amount}>
                           {item.amounts.length > 0 ? formatAmounts(item.amounts) : "some"}

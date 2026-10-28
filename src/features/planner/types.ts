@@ -16,8 +16,10 @@ export interface PlannedRecipe {
 
 export interface Slot {
   recipes: PlannedRecipe[];
+  /** Names of full meals from the inventory, like a frozen soup, that are eaten whole. */
+  fromInventory?: string[];
   note: string;
-  /** Marked as cooked: its ingredients were taken out of the inventory. */
+  /** Marked as cooked: its ingredients and meals were taken out of the inventory. */
   cooked?: boolean;
   /** What cooking took out of the inventory, put back if the meal is no longer cooked. */
   taken?: StockLine[];
@@ -32,8 +34,13 @@ export interface DayPlan {
 
 export const EMPTY_SLOT: Slot = { recipes: [], note: "" };
 
+/** Has recipes or meals from the inventory, so there is something to mark cooked. */
+export function hasFood(slot: Slot): boolean {
+  return slot.recipes.length > 0 || (slot.fromInventory ?? []).length > 0;
+}
+
 export function isEmptySlot(slot: Slot | undefined): boolean {
-  return !slot || (slot.recipes.length === 0 && !slot.note.trim());
+  return !slot || (!hasFood(slot) && !slot.note.trim());
 }
 
 /** The meal right before this one: lunch → previous day's dinner, dinner → same day's lunch. */

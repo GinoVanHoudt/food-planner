@@ -20,6 +20,13 @@
   background: var(--accent-soft);
 }
 
+.selectedIcon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--accent);
+}
+
 .selectedName {
   flex: 1;
   min-width: 0;
@@ -90,6 +97,13 @@
 .optionName {
   flex: 1;
   font-weight: 600;
+}
+
+.optionText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .optionTags {

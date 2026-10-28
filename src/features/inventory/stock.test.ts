@@ -1,7 +1,16 @@
 import { describe, expect, it } from "vite-plus/test";
 import type { Slot } from "../planner/types";
 import type { Recipe } from "../recipes/recipes";
-import { addToStock, cookMeal, editedItem, take, type Stock } from "./stock";
+import {
+  addToStock,
+  byExpiry,
+  cookMeal,
+  editedItem,
+  expiry,
+  take,
+  type Stock,
+  type StockItem,
+} from "./stock";
 
 const rice = { name: "Rice", amounts: [{ quantity: 500, unit: "g" }], always: false };
 const salt = { name: "Salt", amounts: [], always: true };
@@ -87,23 +96,65 @@ describe("addToStock", () => {
   });
 });
 
+describe("addToStock expiry dates", () => {
+  it("keeps the earliest date", () => {
+    const dated: Stock = new Map([["rice", { ...rice, expires: "2026-11-10" }]]);
+    const later = addToStock(dated, [{ name: "Rice", amounts: [], expires: "2026-12-01" }]);
+    const sooner = addToStock(dated, [{ name: "Rice", amounts: [], expires: "2026-11-01" }]);
+    const undated = addToStock(dated, [{ name: "Rice", amounts: [] }]);
+    expect(later.get("rice")?.expires).toBe("2026-11-10");
+    expect(sooner.get("rice")?.expires).toBe("2026-11-01");
+    expect(undated.get("rice")?.expires).toBe("2026-11-10");
+  });
+
+  it("leaves out empty dates", () => {
+    const changes = addToStock(new Map(), [{ name: "Eggs", amounts: [], expires: "" }]);
+    expect(changes.get("eggs")).not.toHaveProperty("expires");
+  });
+});
+
 describe("editedItem", () => {
   it("keeps positive amounts, or none for 'some' and always-available items", () => {
-    expect(editedItem("Rice", [{ quantity: 300, unit: "g" }], false)).toEqual({
+    expect(editedItem({ ...rice, amounts: [{ quantity: 300, unit: "g" }] })).toEqual({
       name: "Rice",
       amounts: [{ quantity: 300, unit: "g" }],
       always: false,
     });
-    expect(editedItem("Rice", [], false)).toEqual({ name: "Rice", amounts: [], always: false });
-    expect(editedItem("Salt", [{ quantity: 1, unit: "kg" }], true)).toEqual({
-      name: "Salt",
+    expect(editedItem({ ...rice, amounts: [] })).toEqual({
+      name: "Rice",
       amounts: [],
-      always: true,
+      always: false,
     });
+    expect(editedItem({ ...salt, amounts: [{ quantity: 1, unit: "kg" }] })).toEqual(salt);
+  });
+
+  it("keeps the expiry date, except for always-available items", () => {
+    expect(editedItem({ ...rice, expires: "2026-11-04" })?.expires).toBe("2026-11-04");
+    expect(editedItem({ ...rice, expires: "" })).not.toHaveProperty("expires");
+    expect(editedItem({ ...salt, expires: "2026-11-04" })).toEqual(salt);
   });
 
   it("is used up when only zero amounts are typed", () => {
-    expect(editedItem("Rice", [{ quantity: 0, unit: "g" }], false)).toBeNull();
+    expect(editedItem({ ...rice, amounts: [{ quantity: 0, unit: "g" }] })).toBeNull();
+  });
+});
+
+describe("expiry", () => {
+  const today = "2026-10-28";
+
+  it("names the day and flags dates that are soon or past", () => {
+    expect(expiry("2026-10-27", today)).toEqual({ label: "Expired", state: "expired" });
+    expect(expiry(today, today)).toEqual({ label: "Expires today", state: "soon" });
+    expect(expiry("2026-10-29", today)).toEqual({ label: "Expires tomorrow", state: "soon" });
+    expect(expiry("2026-10-30", today)).toEqual({ label: "Expires 30 Oct", state: "soon" });
+    expect(expiry("2026-10-31", today)).toEqual({ label: "Expires 31 Oct", state: "later" });
+    expect(expiry("2027-03-01", today)).toEqual({ label: "Expires 1 Mar 2027", state: "later" });
+  });
+
+  it("sorts the soonest first and undated items last", () => {
+    const soup = { name: "Soup", amounts: [], always: false, expires: "2026-11-02" };
+    const lasagna = { ...soup, name: "Lasagna", expires: "2026-10-30" };
+    expect([rice, soup, lasagna].sort(byExpiry)).toEqual([lasagna, soup, rice]);
   });
 });
 
@@ -161,5 +212,63 @@ describe("cookMeal", () => {
       new Map([["rice", { name: "Rice", amounts: [{ quantity: 300, unit: "g" }], always: false }]]),
     );
     expect(slot.taken).toEqual([{ name: "rice", amounts: [{ quantity: 200, unit: "g" }] }]);
+  });
+
+  describe("with full meals from the inventory", () => {
+    const soup: StockItem = {
+      name: "pumpkin soup",
+      amounts: [{ quantity: 1000, unit: "ml" }],
+      always: false,
+      expires: "2026-11-02",
+    };
+    const leftovers: StockItem = { name: "pasta leftovers", amounts: [], always: false };
+    const frozen: Stock = new Map([
+      ["pumpkin soup", soup],
+      ["pasta leftovers", leftovers],
+    ]);
+    const planned: Slot = {
+      recipes: [],
+      fromInventory: ["pumpkin soup", "pasta leftovers"],
+      note: "",
+    };
+
+    it("takes them out whole when cooked, whatever their amounts", () => {
+      const { slot, changes } = cookMeal(planned, { ...planned, cooked: true }, recipes, frozen);
+      expect(changes).toEqual(
+        new Map([
+          ["pumpkin soup", null],
+          ["pasta leftovers", null],
+        ]),
+      );
+      expect(slot.taken).toEqual([
+        { name: "pumpkin soup", amounts: [{ quantity: 1000, unit: "ml" }], expires: "2026-11-02" },
+        { name: "pasta leftovers", amounts: [] },
+      ]);
+    });
+
+    it("puts them back, with their dates, when no longer cooked", () => {
+      const cooked = cookMeal(planned, { ...planned, cooked: true }, recipes, frozen).slot;
+      const { slot, changes } = cookMeal(cooked, { ...cooked, cooked: false }, recipes, new Map());
+      expect(slot).toEqual(planned);
+      expect(changes).toEqual(frozen);
+    });
+
+    it("takes them together with the recipes' ingredients", () => {
+      const both: Slot = { ...planned, recipes: [{ recipeId: "risotto", servings: 2 }] };
+      const { changes } = cookMeal(
+        both,
+        { ...both, cooked: true },
+        recipes,
+        new Map([...frozen, ["rice", rice]]),
+      );
+      expect([...changes.keys()]).toEqual(["pumpkin soup", "pasta leftovers", "rice"]);
+    });
+
+    it("drops the list when all are removed", () => {
+      expect(cookMeal(planned, { ...planned, fromInventory: [] }, recipes, frozen).slot).toEqual({
+        recipes: [],
+        note: "",
+      });
+    });
   });
 });

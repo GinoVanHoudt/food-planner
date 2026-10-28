@@ -57,6 +57,13 @@ export function formatDay(key: DayKey, today = todayKey()): string {
   return relativeDayName(key, today) ?? formatDayShort(key);
 }
 
+/** e.g. "4 Nov", with the year if it is not this year's: "4 Nov 2027". */
+export function formatDate(key: DayKey, today = todayKey()): string {
+  const date = dayMonthFormat.format(fromDayKey(key));
+  const year = key.slice(0, 4);
+  return year === today.slice(0, 4) ? date : `${date} ${year}`;
+}
+
 /** e.g. "26 Oct – 1 Nov". */
 export function formatRange(from: DayKey, to: DayKey): string {
   const start = dayMonthFormat.format(fromDayKey(from));

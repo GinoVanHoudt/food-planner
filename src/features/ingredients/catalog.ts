@@ -9,14 +9,16 @@ import { OTHER_LOCATION_ID } from "../settings/locations";
 import { OTHER_SECTION_ID } from "../settings/sections";
 
 /**
- * Every ingredient name used so far, with the store section it was last put in and the place at
- * home where it is kept.
+ * Every ingredient name used so far, with the store section it was last put in, the place at home
+ * where it is kept and whether it is a full meal.
  */
 export interface CatalogEntry {
   id: string;
   name: string;
   sectionId?: string;
   locationId?: string;
+  /** A full meal, like a frozen soup or leftovers, that can be planned as lunch or dinner. */
+  meal?: boolean;
 }
 
 const catalogRef = () => collection(db, "ingredients");
@@ -31,11 +33,13 @@ export function useCatalog() {
       byKey.get(ingredientKey(name))?.sectionId ?? OTHER_SECTION_ID;
     const locationOf = (name: string) =>
       byKey.get(ingredientKey(name))?.locationId ?? OTHER_LOCATION_ID;
+    const isMeal = (name: string) => Boolean(byKey.get(ingredientKey(name))?.meal);
     return {
       entries: data,
       names,
       sectionOf,
       locationOf,
+      isMeal,
       has: (name: string) => byKey.has(ingredientKey(name)),
       loading,
     };
@@ -80,4 +84,16 @@ export function setIngredientLocations(entries: { name: string; locationId: stri
     );
   }
   persist(batch.commit(), "Saving location");
+}
+
+/** Remembers whether an ingredient is a full meal, so it stays one when it is bought again. */
+export function setIngredientMeal(name: string, meal: boolean) {
+  persist(
+    setDoc(
+      doc(catalogRef(), ingredientKey(name)),
+      { name: cleanName(name), meal },
+      { merge: true },
+    ),
+    "Saving meal",
+  );
 }

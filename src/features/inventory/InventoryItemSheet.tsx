@@ -1,11 +1,11 @@
-import { House, Trash } from "lucide-react";
+import { House, Soup, Trash, X } from "lucide-react";
 import { useId, useState, type FormEvent } from "react";
 import { capitalize, formatAmounts, parseAmounts } from "../../lib/units";
-import { Button } from "../../ui/Button";
+import { Button, IconButton } from "../../ui/Button";
 import { Chip, ChipRow } from "../../ui/Chip";
 import { Field, Input } from "../../ui/Field";
 import { Sheet } from "../../ui/Sheet";
-import { setIngredientLocations, useCatalog } from "../ingredients/catalog";
+import { setIngredientLocations, setIngredientMeal, useCatalog } from "../ingredients/catalog";
 import { useLocations } from "../settings/locations";
 import { saveStock, type InventoryItem } from "./inventory";
 import s from "./InventoryItemSheet.module.css";
@@ -18,11 +18,17 @@ export interface InventoryTarget {
 
 interface Draft {
   amount: string;
+  /** `YYYY-MM-DD`, or empty for no date. */
+  expires: string;
   locationId: string;
+  meal: boolean;
   always: boolean;
 }
 
-/** Edits the amount, location and "always at home" flag of something at home. */
+/**
+ * Edits the amount, expiry date, location and "full meal" and "always at home" flags of something
+ * at home.
+ */
 export function InventoryItemSheet({
   target,
   onClose,
@@ -32,16 +38,24 @@ export function InventoryItemSheet({
 }) {
   const formId = useId();
   const locations = useLocations();
-  const { locationOf } = useCatalog();
+  const { locationOf, isMeal } = useCatalog();
   const [openedFor, setOpenedFor] = useState<InventoryTarget | null>(null);
-  const [draft, setDraft] = useState<Draft>({ amount: "", locationId: "", always: false });
+  const [draft, setDraft] = useState<Draft>({
+    amount: "",
+    expires: "",
+    locationId: "",
+    meal: false,
+    always: false,
+  });
 
   // Start a fresh draft whenever the sheet opens.
   if (target && target !== openedFor) {
     setOpenedFor(target);
     setDraft({
       amount: formatAmounts(target.item.amounts),
+      expires: target.item.expires ?? "",
       locationId: locationOf(target.item.name),
+      meal: isMeal(target.item.name),
       always: target.item.always,
     });
   }
@@ -55,10 +69,17 @@ export function InventoryItemSheet({
   const save = (event: FormEvent) => {
     event.preventDefault();
     if (!item || invalid) return;
-    saveStock(new Map([[item.id, editedItem(item.name, amounts ?? [], draft.always)]]));
+    const edited = editedItem({
+      name: item.name,
+      amounts: amounts ?? [],
+      always: draft.always,
+      expires: draft.expires,
+    });
+    saveStock(new Map([[item.id, edited]]));
     if (draft.locationId !== locationOf(item.name)) {
       setIngredientLocations([{ name: item.name, locationId: draft.locationId }]);
     }
+    if (draft.meal !== isMeal(item.name)) setIngredientMeal(item.name, draft.meal);
     onClose();
   };
 
@@ -99,6 +120,20 @@ export function InventoryItemSheet({
               />
             </Field>
             {invalid && <p className={s.error}>That is not an amount.</p>}
+            <Field label="Expires">
+              <span className={s.date}>
+                <Input
+                  type="date"
+                  value={draft.expires}
+                  onChange={(event) => update({ expires: event.target.value })}
+                />
+                {draft.expires && (
+                  <IconButton label="No expiry date" onClick={() => update({ expires: "" })}>
+                    <X />
+                  </IconButton>
+                )}
+              </span>
+            </Field>
             <div className={s.group}>
               <h3 className={s.heading}>Kept in</h3>
               <ChipRow>
@@ -113,6 +148,21 @@ export function InventoryItemSheet({
                 ))}
               </ChipRow>
             </div>
+            <div className={s.group}>
+              <ChipRow>
+                <Chip
+                  icon={<Soup />}
+                  selected={draft.meal}
+                  onClick={() => update({ meal: !draft.meal })}
+                >
+                  Full meal
+                </Chip>
+              </ChipRow>
+              <p className={s.hint}>
+                For things like a frozen soup or leftovers: plan it as a lunch or dinner, and it
+                leaves the inventory once it's eaten.
+              </p>
+            </div>
           </>
         )}
         <div className={s.group}>
@@ -120,7 +170,7 @@ export function InventoryItemSheet({
             <Chip
               icon={<House />}
               selected={draft.always}
-              onClick={() => update({ always: !draft.always })}
+              onClick={() => update({ always: !draft.always, meal: false })}
             >
               Always at home
             </Chip>

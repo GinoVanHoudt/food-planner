@@ -62,7 +62,10 @@ src/
 - **Inventory** items are keyed by `ingredientKey`, like the catalog, so they match recipe
   ingredients by name. Amounts are only subtracted within the same unit (after g/ml conversion); an
   item without amounts means "we have some" and covers any need, and `always` items are never on a
-  list or used up.
+  list or used up. Items whose catalog entry is a `meal` (a frozen soup, leftovers) can be planned
+  as lunch or dinner (`Slot.fromInventory`); cooking takes them out whole. `expires` is optional
+  and merging keeps the earliest date; leave out empty dates (Firestore rejects `undefined`,
+  see `expiresField`).
 - **Names** of recipes, ingredients and shopping/inventory items are saved in lower case with
   `cleanName` (`lib/units.ts`), because phones capitalise the first letter and computers don't, and
   shown with `capitalize`. Their inputs set `autoCapitalize="off"`. Tags are lower case too.
@@ -94,9 +97,10 @@ src/
 members/{email}        { name }                                          console-managed allowlist
 recipes/{id}           { name, servings, ingredients[{name, quantity|null, unit}], instructions, sourceUrl, tags[] }
 plan/{YYYY-MM-DD}      { lunch?: Slot, dinner?: Slot }
-                       Slot = { recipes[{recipeId, servings}], note, cooked?, taken?[{name, amounts[]}] }
-ingredients/{key}      { name, sectionId?, locationId? }                 remembered store section and home location
-inventory/{key}        { name, amounts[], always }                       what is at home, key = ingredientKey
+                       Slot = { recipes[{recipeId, servings}], fromInventory?[name], note, cooked?,
+                                taken?[{name, amounts[], expires?}] }
+ingredients/{key}      { name, sectionId?, locationId?, meal? }          remembered store section, home location, full meal
+inventory/{key}        { name, amounts[], always, expires? }             what is at home, key = ingredientKey
 settings/sections      { sections[{id, name}] }                          store walking order
 settings/locations     { locations[{id, name}] }                         inventory locations (fridge, freezer…)
 settings/shopping      { from, to }                                      range of the current list

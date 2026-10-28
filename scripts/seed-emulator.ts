@@ -133,6 +133,12 @@ const inventory = {
   parmesan: { name: "Parmesan", amounts: [amount(100, "g")], always: false },
   salt: { name: "Salt", amounts: [], always: true },
   "olive oil": { name: "Olive oil", amounts: [], always: true },
+  "pumpkin soup": {
+    name: "pumpkin soup",
+    amounts: [amount(1000, "ml")],
+    always: false,
+    expires: dayKey(2),
+  },
 };
 
 const email = (process.argv[2] ?? "you@example.com").toLowerCase();
@@ -146,6 +152,12 @@ for (const [key, sectionId] of Object.entries(sections)) {
     ...(locations[key] && { locationId: locations[key] }),
   });
 }
+// A full meal, which can be planned as lunch or dinner.
+await put(`ingredients/${encodeURIComponent("pumpkin soup")}`, {
+  name: "pumpkin soup",
+  locationId: "freezer",
+  meal: true,
+});
 for (const [key, item] of Object.entries(inventory)) {
   await put(`inventory/${encodeURIComponent(key)}`, item);
 }

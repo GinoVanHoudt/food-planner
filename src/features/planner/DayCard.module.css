@@ -108,6 +108,14 @@
   white-space: nowrap;
 }
 
+.inventoryIcon {
+  flex: none;
+  align-self: center;
+  width: 14px;
+  height: 14px;
+  color: var(--text-muted);
+}
+
 .servings {
   flex: none;
   font-size: 13px;

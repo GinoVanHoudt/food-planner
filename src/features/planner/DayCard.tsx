@@ -1,11 +1,11 @@
-import { ChefHat, Plus, RotateCcw, StickyNote } from "lucide-react";
+import { ChefHat, Plus, RotateCcw, Soup, StickyNote } from "lucide-react";
 import { motion } from "motion/react";
 import { formatDayShort, relativeDayName, type DayKey } from "../../lib/dates";
 import { cx } from "../../lib/cx";
 import { capitalize } from "../../lib/units";
 import type { Recipe } from "../recipes/recipes";
 import s from "./DayCard.module.css";
-import { MEAL_LABELS, MEALS, type DayPlan, type Meal, type Slot } from "./types";
+import { isEmptySlot, MEAL_LABELS, MEALS, type DayPlan, type Meal, type Slot } from "./types";
 
 interface DayCardProps {
   day: DayKey;
@@ -53,8 +53,9 @@ interface MealRowProps {
 
 function MealRow({ meal, slot, recipes, onClick }: MealRowProps) {
   const planned = slot?.recipes ?? [];
+  const fromInventory = slot?.fromInventory ?? [];
   const note = slot?.note ?? "";
-  const empty = planned.length === 0 && !note;
+  const empty = isEmptySlot(slot);
   const cooked = Boolean(slot?.cooked);
   return (
     <motion.button
@@ -77,6 +78,12 @@ function MealRow({ meal, slot, recipes, onClick }: MealRowProps) {
               {capitalize(recipes.get(recipeId)?.name ?? "Deleted recipe")}
             </span>
             <span className={s.servings}>×{servings}</span>
+          </span>
+        ))}
+        {fromInventory.map((name) => (
+          <span key={name} className={s.recipe}>
+            <Soup className={s.inventoryIcon} role="img" aria-label="From the inventory" />
+            <span className={s.recipeName}>{capitalize(name)}</span>
           </span>
         ))}
         {note && (

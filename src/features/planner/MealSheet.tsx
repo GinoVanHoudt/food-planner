@@ -1,23 +1,33 @@
-import { Check, ChefHat, RotateCcw, Utensils, X } from "lucide-react";
+import { Check, ChefHat, RotateCcw, Soup, Utensils, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { Link } from "react-router";
 import { formatDay, type DayKey } from "../../lib/dates";
 import { cx } from "../../lib/cx";
-import { capitalize } from "../../lib/units";
+import { capitalize, cleanName, formatAmounts } from "../../lib/units";
 import { Button, IconButton } from "../../ui/Button";
 import { Chip, ChipRow } from "../../ui/Chip";
 import { Input } from "../../ui/Field";
 import { Sheet } from "../../ui/Sheet";
 import { Stepper } from "../../ui/Stepper";
+import { useCatalog } from "../ingredients/catalog";
+import { Expiry } from "../inventory/Expiry";
 import { useInventory } from "../inventory/inventory";
-import { cookMeal } from "../inventory/stock";
+import { byExpiry, cookMeal } from "../inventory/stock";
 import { RecipeFilterBar } from "../recipes/RecipeFilterBar";
 import { useRecipes, type Recipe } from "../recipes/recipes";
 import { useRecipeFilter } from "../recipes/useRecipeFilter";
 import s from "./MealSheet.module.css";
 import { saveSlot, usePlan } from "./plan";
-import { EMPTY_SLOT, MEAL_LABELS, previousSlot, recipeNames, type Meal, type Slot } from "./types";
+import {
+  EMPTY_SLOT,
+  hasFood,
+  MEAL_LABELS,
+  previousSlot,
+  recipeNames,
+  type Meal,
+  type Slot,
+} from "./types";
 
 export interface MealTarget {
   day: DayKey;
@@ -29,6 +39,14 @@ interface MealSheetProps {
   onClose: () => void;
 }
 
+/** How a chosen recipe or inventory meal slides in and out. */
+const rowMotion = {
+  layout: true,
+  initial: { opacity: 0, x: -16 },
+  animate: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: 16 },
+};
+
 /**
  * Edits one lunch/dinner slot. Changes are saved when the sheet closes, together with what marking
  * it cooked (or no longer cooked) changes in the inventory.
@@ -36,7 +54,8 @@ interface MealSheetProps {
 export function MealSheet({ target, onClose }: MealSheetProps) {
   const { days } = usePlan();
   const { recipes, byId } = useRecipes();
-  const { stock } = useInventory();
+  const { items, stock } = useInventory();
+  const { isMeal } = useCatalog();
   const filter = useRecipeFilter(recipes);
   const [openedFor, setOpenedFor] = useState<MealTarget | null>(null);
   const [original, setOriginal] = useState<Slot>(EMPTY_SLOT);
@@ -86,9 +105,24 @@ export function MealSheet({ target, onClose }: MealSheetProps) {
       ),
     }));
 
+  const fromInventory = draft.fromInventory ?? [];
+
+  const toggleFromInventory = (name: string) =>
+    setDraft((current) => {
+      const names = current.fromInventory ?? [];
+      return {
+        ...current,
+        fromInventory: names.includes(name)
+          ? names.filter((other) => other !== name)
+          : [...names, name],
+      };
+    });
+
   const setNote = (note: string) => setDraft((current) => ({ ...current, note }));
 
   const toggleCooked = () => setDraft((current) => ({ ...current, cooked: !current.cooked }));
+
+  const meals = items.filter((item) => !item.always && isMeal(item.name)).sort(byExpiry);
 
   const shown = target ?? openedFor;
   const leftoverNames = shown ? recipeNames(previousSlot(days, shown.day, shown.meal), byId) : [];
@@ -106,7 +140,7 @@ export function MealSheet({ target, onClose }: MealSheetProps) {
           <Button
             variant="danger"
             onClick={() => setDraft(EMPTY_SLOT)}
-            disabled={!draft.recipes.length && !draft.note}
+            disabled={!hasFood(draft) && !draft.note}
           >
             Clear
           </Button>
@@ -118,7 +152,7 @@ export function MealSheet({ target, onClose }: MealSheetProps) {
     >
       <div className={s.content}>
         <AnimatePresence initial={false}>
-          {draft.recipes.length > 0 && (
+          {hasFood(draft) && (
             <motion.ul
               className={s.selected}
               initial={{ opacity: 0, height: 0 }}
@@ -127,14 +161,7 @@ export function MealSheet({ target, onClose }: MealSheetProps) {
             >
               <AnimatePresence initial={false}>
                 {draft.recipes.map(({ recipeId, servings }) => (
-                  <motion.li
-                    key={recipeId}
-                    layout
-                    className={s.selectedRow}
-                    initial={{ opacity: 0, x: -16 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 16 }}
-                  >
+                  <motion.li key={recipeId} className={s.selectedRow} {...rowMotion}>
                     <span className={s.selectedName}>
                       {capitalize(byId.get(recipeId)?.name ?? "Deleted recipe")}
                     </span>
@@ -149,12 +176,21 @@ export function MealSheet({ target, onClose }: MealSheetProps) {
                     </IconButton>
                   </motion.li>
                 ))}
+                {fromInventory.map((name) => (
+                  <motion.li key={`inventory:${name}`} className={s.selectedRow} {...rowMotion}>
+                    <Soup className={s.selectedIcon} role="img" aria-label="From the inventory" />
+                    <span className={s.selectedName}>{capitalize(name)}</span>
+                    <IconButton label="Remove" onClick={() => toggleFromInventory(name)}>
+                      <X />
+                    </IconButton>
+                  </motion.li>
+                ))}
               </AnimatePresence>
             </motion.ul>
           )}
         </AnimatePresence>
 
-        {draft.recipes.length > 0 && (
+        {hasFood(draft) && (
           <div className={s.cooked}>
             <ChipRow>
               <Chip icon={<ChefHat />} selected={Boolean(draft.cooked)} onClick={toggleCooked}>
@@ -163,8 +199,8 @@ export function MealSheet({ target, onClose }: MealSheetProps) {
             </ChipRow>
             <p className={s.hint}>
               {draft.cooked
-                ? "Its ingredients are removed from the inventory."
-                : "Mark it once it's cooked to remove its ingredients from the inventory."}
+                ? "What it used is removed from the inventory."
+                : "Mark it once it's cooked to remove what it uses from the inventory."}
             </p>
           </div>
         )}
@@ -193,6 +229,38 @@ export function MealSheet({ target, onClose }: MealSheetProps) {
             </Chip>
           </ChipRow>
         </div>
+
+        {meals.length > 0 && (
+          <>
+            <h3 className={s.heading}>From the inventory</h3>
+            <ul className={s.options}>
+              {meals.map((item) => {
+                const name = cleanName(item.name);
+                const selected = fromInventory.includes(name);
+                return (
+                  <li key={item.id}>
+                    <motion.button
+                      type="button"
+                      className={cx(s.option, selected && s.optionSelected)}
+                      aria-pressed={selected}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => toggleFromInventory(name)}
+                    >
+                      <span className={s.check}>{selected && <Check />}</span>
+                      <span className={s.optionText}>
+                        <span className={s.optionName}>{capitalize(name)}</span>
+                        {item.expires && <Expiry date={item.expires} />}
+                      </span>
+                      {item.amounts.length > 0 && (
+                        <span className={s.optionTags}>{formatAmounts(item.amounts)}</span>
+                      )}
+                    </motion.button>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
+        )}
 
         <h3 className={s.heading}>Add a recipe</h3>
         {recipes.length === 0 ? (

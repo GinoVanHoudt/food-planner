@@ -16,8 +16,10 @@
 
 .row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
+  padding-bottom: var(--space-2);
   border-bottom: 1px solid var(--border);
 }
 
@@ -82,6 +84,23 @@
   flex: none;
   width: auto;
   max-width: 40%;
+}
+
+/* Second line of a row, lined up with the name (past the check). */
+.expires {
+  display: flex;
+  flex-basis: 100%;
+  align-items: center;
+  gap: var(--space-2);
+  padding-left: 40px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.date {
+  width: auto;
+  min-height: 36px;
+  padding: var(--space-1) var(--space-2);
 }
 
 .addForm {

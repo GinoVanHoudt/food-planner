@@ -26,6 +26,8 @@ interface Row {
   name: string;
   amounts: Amount[];
   locationId: string;
+  /** `YYYY-MM-DD`, or empty for no date. */
+  expires: string;
   /** Goes into the inventory; unselected rows (e.g. toilet paper) only leave the list. */
   selected: boolean;
 }
@@ -50,6 +52,7 @@ export function PutAwaySheet({ items, onClose }: PutAwaySheetProps) {
     name,
     amounts,
     locationId: locationOf(name),
+    expires: "",
     selected: true,
   });
 
@@ -135,6 +138,17 @@ export function PutAwaySheet({ items, onClose }: PutAwaySheetProps) {
                   </option>
                 ))}
               </Select>
+              <label className={s.expires}>
+                Expires
+                <Input
+                  type="date"
+                  className={s.date}
+                  value={row.expires}
+                  onChange={(event) => update(row.id, { expires: event.target.value })}
+                  disabled={!row.selected}
+                  aria-label={`When ${row.name} expires`}
+                />
+              </label>
             </li>
           ))}
         </ul>

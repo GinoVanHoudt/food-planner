@@ -41,10 +41,13 @@ service cloud.firestore {
         && isString(request.resource.data.sourceUrl, 2000);
     }
 
-    // A planned meal, if there is one: `cooked` and what cooking it took (`taken`) are optional.
+    // A planned meal, if there is one: full meals from the inventory (`fromInventory`), `cooked`
+    // and what cooking it took (`taken`) are optional.
     function isMealOrMissing(data, meal) {
       return !(meal in data) || (
         data[meal] is map
+        && (!('fromInventory' in data[meal])
+          || (data[meal].fromInventory is list && data[meal].fromInventory.size() <= 20))
         && (!('cooked' in data[meal]) || data[meal].cooked is bool)
         && (!('taken' in data[meal]) || (data[meal].taken is list && data[meal].taken.size() <= 200))
       );
@@ -65,7 +68,8 @@ service cloud.firestore {
       allow write: if isMember()
         && isString(request.resource.data.name, 200)
         && (!('locationId' in request.resource.data)
-          || isString(request.resource.data.locationId, 100));
+          || isString(request.resource.data.locationId, 100))
+        && (!('meal' in request.resource.data) || request.resource.data.meal is bool);
     }
 
     match /shoppingItems/{itemId} {
@@ -83,7 +87,10 @@ service cloud.firestore {
         && request.resource.data.name.size() > 0
         && request.resource.data.amounts is list
         && request.resource.data.amounts.size() <= 20
-        && request.resource.data.always is bool;
+        && request.resource.data.always is bool
+        && (!('expires' in request.resource.data)
+          || (request.resource.data.expires is string
+            && request.resource.data.expires.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')));
     }
 
     match /cards/{cardId} {

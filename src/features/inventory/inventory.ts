@@ -5,7 +5,7 @@ import { liveCollection, useLive } from "../../lib/live";
 import { persist } from "../../lib/persist";
 import { byName } from "../../lib/sort";
 import { cleanName, ingredientKey } from "../../lib/units";
-import type { Stock, StockChanges, StockItem } from "./stock";
+import { expiresField, type Stock, type StockChanges, type StockItem } from "./stock";
 
 /** Something at home, stored under its `ingredientKey`. */
 export interface InventoryItem extends StockItem {
@@ -28,7 +28,12 @@ export function addStockChanges(batch: WriteBatch, changes: StockChanges) {
   for (const [key, item] of changes) {
     const ref = doc(inventoryRef(), key);
     if (item) {
-      batch.set(ref, { name: cleanName(item.name), amounts: item.amounts, always: item.always });
+      batch.set(ref, {
+        name: cleanName(item.name),
+        amounts: item.amounts,
+        always: item.always,
+        ...expiresField(item.expires),
+      });
     } else {
       batch.delete(ref);
     }
