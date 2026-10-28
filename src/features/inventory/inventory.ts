@@ -4,7 +4,7 @@ import { db } from "../../lib/firebase";
 import { liveCollection, useLive } from "../../lib/live";
 import { persist } from "../../lib/persist";
 import { byName } from "../../lib/sort";
-import { ingredientKey } from "../../lib/units";
+import { cleanName, ingredientKey } from "../../lib/units";
 import type { Stock, StockChanges, StockItem } from "./stock";
 
 /** Something at home, stored under its `ingredientKey`. */
@@ -27,8 +27,11 @@ export function useInventory() {
 export function addStockChanges(batch: WriteBatch, changes: StockChanges) {
   for (const [key, item] of changes) {
     const ref = doc(inventoryRef(), key);
-    if (item) batch.set(ref, { name: item.name, amounts: item.amounts, always: item.always });
-    else batch.delete(ref);
+    if (item) {
+      batch.set(ref, { name: cleanName(item.name), amounts: item.amounts, always: item.always });
+    } else {
+      batch.delete(ref);
+    }
   }
 }
 
@@ -43,7 +46,7 @@ export function saveStock(changes: StockChanges) {
 export function setAlwaysAtHome(name: string) {
   persist(
     setDoc(doc(inventoryRef(), ingredientKey(name)), {
-      name: name.trim(),
+      name: cleanName(name),
       amounts: [],
       always: true,
     }),

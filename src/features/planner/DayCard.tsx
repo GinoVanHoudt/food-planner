@@ -2,6 +2,7 @@ import { ChefHat, Plus, RotateCcw, StickyNote } from "lucide-react";
 import { motion } from "motion/react";
 import { formatDayShort, relativeDayName, type DayKey } from "../../lib/dates";
 import { cx } from "../../lib/cx";
+import { capitalize } from "../../lib/units";
 import type { Recipe } from "../recipes/recipes";
 import s from "./DayCard.module.css";
 import { MEAL_LABELS, MEALS, type DayPlan, type Meal, type Slot } from "./types";
@@ -72,7 +73,9 @@ function MealRow({ meal, slot, recipes, onClick }: MealRowProps) {
         )}
         {planned.map(({ recipeId, servings }) => (
           <span key={recipeId} className={s.recipe}>
-            <span className={s.recipeName}>{recipes.get(recipeId)?.name ?? "Deleted recipe"}</span>
+            <span className={s.recipeName}>
+              {capitalize(recipes.get(recipeId)?.name ?? "Deleted recipe")}
+            </span>
             <span className={s.servings}>×{servings}</span>
           </span>
         ))}

@@ -3,7 +3,13 @@ import { motion } from "motion/react";
 import { useState, type FormEvent } from "react";
 import { cx } from "../../lib/cx";
 import { plural } from "../../lib/plural";
-import { formatAmounts, MAX_NAME_LENGTH, parseIngredientLine, type Amount } from "../../lib/units";
+import {
+  capitalize,
+  formatAmounts,
+  MAX_NAME_LENGTH,
+  parseIngredientLine,
+  type Amount,
+} from "../../lib/units";
 import { Button, IconButton } from "../../ui/Button";
 import { Input, Select } from "../../ui/Field";
 import { Sheet } from "../../ui/Sheet";
@@ -110,7 +116,7 @@ export function PutAwaySheet({ items, onClose }: PutAwaySheetProps) {
               >
                 <span className={s.check}>{row.selected && <Check />}</span>
                 <span className={s.text}>
-                  <span className={s.name}>{row.name}</span>
+                  <span className={s.name}>{capitalize(row.name)}</span>
                   {row.amounts.length > 0 && (
                     <span className={s.amount}>{formatAmounts(row.amounts)}</span>
                   )}
@@ -139,6 +145,7 @@ export function PutAwaySheet({ items, onClose }: PutAwaySheetProps) {
             placeholder="Bought something else? e.g. 6 eggs"
             maxLength={MAX_NAME_LENGTH}
             aria-label="Add something else you bought"
+            autoCapitalize="off"
             enterKeyHint="done"
           />
           <IconButton type="submit" label="Add" disabled={!extra.trim()}>

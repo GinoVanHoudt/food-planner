@@ -1,7 +1,7 @@
 import { CookingPot, ExternalLink, Pencil, Trash } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { formatAmount, scaleAmount } from "../../lib/units";
+import { capitalize, formatAmount, scaleAmount } from "../../lib/units";
 import { IconButton } from "../../ui/Button";
 import { Chip, ChipRow } from "../../ui/Chip";
 import { ConfirmSheet } from "../../ui/ConfirmSheet";
@@ -45,7 +45,7 @@ export function RecipePage() {
   return (
     <>
       <PageHeader
-        title={recipe.name}
+        title={capitalize(recipe.name)}
         backTo="/recipes"
         actions={
           <>
@@ -90,7 +90,7 @@ export function RecipePage() {
                     <span className={s.amount}>
                       {formatAmount(scaleAmount(ingredient, factor))}
                     </span>
-                    <span>{ingredient.name}</span>
+                    <span>{capitalize(ingredient.name)}</span>
                   </li>
                 ))}
               </ul>
@@ -108,7 +108,7 @@ export function RecipePage() {
       <ConfirmSheet
         open={confirmDelete}
         title="Delete recipe?"
-        message={`“${recipe.name}” will be removed. Meals already planned with it will show it as deleted.`}
+        message={`“${capitalize(recipe.name)}” will be removed. Meals already planned with it will show it as deleted.`}
         confirmLabel="Delete"
         onConfirm={() => {
           deleteRecipe(recipe.id);

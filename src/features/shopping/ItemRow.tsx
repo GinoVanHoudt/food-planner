@@ -2,7 +2,7 @@ import { EllipsisVertical } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { cx } from "../../lib/cx";
-import { formatAmounts } from "../../lib/units";
+import { capitalize, formatAmounts } from "../../lib/units";
 import { IconButton } from "../../ui/Button";
 import s from "./ItemRow.module.css";
 import { setChecked, type ShoppingItem } from "./shopping";
@@ -65,9 +65,9 @@ export function ItemRow({ item, onOptions }: ItemRowProps) {
             </svg>
           </span>
           <span className={s.text}>
-            <span className={s.name}>{item.name}</span>
+            <span className={s.name}>{capitalize(item.name)}</span>
             {item.sources.length > 0 && (
-              <span className={s.sources}>{item.sources.join(", ")}</span>
+              <span className={s.sources}>{item.sources.map(capitalize).join(", ")}</span>
             )}
           </span>
           <span className={s.amount}>{formatAmounts(item.amounts)}</span>

@@ -1,5 +1,5 @@
 import { House, Trash } from "lucide-react";
-import { formatAmounts } from "../../lib/units";
+import { capitalize, formatAmounts } from "../../lib/units";
 import { Button } from "../../ui/Button";
 import { Chip, ChipRow } from "../../ui/Chip";
 import { Sheet } from "../../ui/Sheet";
@@ -16,13 +16,15 @@ interface ItemSheetProps {
 
 export function ItemSheet({ item, sections, onClose }: ItemSheetProps) {
   return (
-    <Sheet open={item !== null} onClose={onClose} title={item?.name ?? ""}>
+    <Sheet open={item !== null} onClose={onClose} title={capitalize(item?.name ?? "")}>
       {item && (
         <div className={s.content}>
           {(item.amounts.length > 0 || item.sources.length > 0) && (
             <p className={s.details}>
               {formatAmounts(item.amounts)}
-              {item.sources.length > 0 && <span> · for {item.sources.join(", ")}</span>}
+              {item.sources.length > 0 && (
+                <span> · for {item.sources.map(capitalize).join(", ")}</span>
+              )}
             </p>
           )}
           <div className={s.group}>

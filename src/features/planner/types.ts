@@ -1,5 +1,5 @@
 import { addDays, type DayKey } from "../../lib/dates";
-import { addAmounts, ingredientKey, scaleAmount, type Amount } from "../../lib/units";
+import { addAmounts, cleanName, ingredientKey, scaleAmount, type Amount } from "../../lib/units";
 import type { StockLine } from "../inventory/stock";
 import type { Recipe } from "../recipes/recipes";
 
@@ -72,12 +72,12 @@ export function collectNeeds(slots: Slot[], recipes: Map<string, Recipe>): Map<s
         const key = ingredientKey(ingredient.name);
         if (!key) continue;
         const group = groups.get(key) ?? {
-          name: ingredient.name.trim(),
+          name: cleanName(ingredient.name),
           amounts: [],
           sources: new Set(),
         };
         group.amounts.push(scaleAmount(ingredient, factor));
-        group.sources.add(recipe.name);
+        group.sources.add(cleanName(recipe.name));
         groups.set(key, group);
       }
     }

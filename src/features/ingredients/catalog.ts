@@ -4,7 +4,7 @@ import { db } from "../../lib/firebase";
 import { liveCollection, useLive } from "../../lib/live";
 import { persist } from "../../lib/persist";
 import { compareNames } from "../../lib/sort";
-import { ingredientKey } from "../../lib/units";
+import { cleanName, ingredientKey } from "../../lib/units";
 import { OTHER_LOCATION_ID } from "../settings/locations";
 import { OTHER_SECTION_ID } from "../settings/sections";
 
@@ -47,7 +47,7 @@ export function rememberIngredients(names: string[], isKnown: (name: string) => 
   const unknown = new Map(
     names
       .filter((name) => name.trim() && !isKnown(name))
-      .map((name) => [ingredientKey(name), name.trim()]),
+      .map((name) => [ingredientKey(name), cleanName(name)]),
   );
   if (unknown.size === 0) return;
   const batch = writeBatch(db);
@@ -61,7 +61,7 @@ export function setIngredientSection(name: string, sectionId: string) {
   persist(
     setDoc(
       doc(catalogRef(), ingredientKey(name)),
-      { name: name.trim(), sectionId },
+      { name: cleanName(name), sectionId },
       { merge: true },
     ),
     "Saving section",
@@ -75,7 +75,7 @@ export function setIngredientLocations(entries: { name: string; locationId: stri
   for (const { name, locationId } of entries) {
     batch.set(
       doc(catalogRef(), ingredientKey(name)),
-      { name: name.trim(), locationId },
+      { name: cleanName(name), locationId },
       { merge: true },
     );
   }

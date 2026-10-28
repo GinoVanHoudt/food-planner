@@ -1,6 +1,6 @@
 import { House, Trash } from "lucide-react";
 import { useId, useState, type FormEvent } from "react";
-import { formatAmounts, parseAmounts } from "../../lib/units";
+import { capitalize, formatAmounts, parseAmounts } from "../../lib/units";
 import { Button } from "../../ui/Button";
 import { Chip, ChipRow } from "../../ui/Chip";
 import { Field, Input } from "../../ui/Field";
@@ -71,7 +71,7 @@ export function InventoryItemSheet({
     <Sheet
       open={target !== null}
       onClose={onClose}
-      title={item?.name ?? ""}
+      title={capitalize(item?.name ?? "")}
       footer={
         <>
           <Button variant="danger" icon={<Trash />} onClick={remove}>

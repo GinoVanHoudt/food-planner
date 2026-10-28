@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
 import {
   addAmounts,
+  capitalize,
+  cleanName,
   formatAmount,
   formatAmounts,
   ingredientKey,
@@ -67,6 +69,11 @@ describe("parseIngredientLine", () => {
 
   it("handles lines without a quantity", () => {
     expect(parseIngredientLine("salt")).toEqual({ name: "salt", quantity: null, unit: "" });
+  });
+
+  it("saves the name in lower case", () => {
+    expect(parseIngredientLine("2 L Milk").name).toBe("milk");
+    expect(parseIngredientLine("Olive  Oil").name).toBe("olive oil");
   });
 });
 
@@ -216,6 +223,19 @@ describe("scaleAmount", () => {
       quantity: null,
       unit: "pinch",
     });
+  });
+});
+
+describe("cleanName", () => {
+  it("trims, collapses spaces and lowercases", () => {
+    expect(cleanName("  Chili Sin   Carne ")).toBe("chili sin carne");
+  });
+});
+
+describe("capitalize", () => {
+  it("capitalises only the first letter", () => {
+    expect(capitalize("chili sin carne")).toBe("Chili sin carne");
+    expect(capitalize("")).toBe("");
   });
 });
 

@@ -122,7 +122,7 @@ describe("cookMeal", () => {
     expect(slot).toEqual({
       ...planned,
       cooked: true,
-      taken: [{ name: "Rice", amounts: [{ quantity: 400, unit: "g" }] }],
+      taken: [{ name: "rice", amounts: [{ quantity: 400, unit: "g" }] }],
     });
   });
 
@@ -160,6 +160,6 @@ describe("cookMeal", () => {
     expect(changes).toEqual(
       new Map([["rice", { name: "Rice", amounts: [{ quantity: 300, unit: "g" }], always: false }]]),
     );
-    expect(slot.taken).toEqual([{ name: "Rice", amounts: [{ quantity: 200, unit: "g" }] }]);
+    expect(slot.taken).toEqual([{ name: "rice", amounts: [{ quantity: 200, unit: "g" }] }]);
   });
 });

@@ -90,6 +90,7 @@ export function ShoppingPage() {
             placeholder="Add item, e.g. 2 l milk"
             maxLength={MAX_NAME_LENGTH}
             aria-label="Add item"
+            autoCapitalize="off"
             enterKeyHint="done"
           />
           <IconButton

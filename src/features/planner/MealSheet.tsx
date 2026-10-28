@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Link } from "react-router";
 import { formatDay, type DayKey } from "../../lib/dates";
 import { cx } from "../../lib/cx";
+import { capitalize } from "../../lib/units";
 import { Button, IconButton } from "../../ui/Button";
 import { Chip, ChipRow } from "../../ui/Chip";
 import { Input } from "../../ui/Field";
@@ -135,7 +136,7 @@ export function MealSheet({ target, onClose }: MealSheetProps) {
                     exit={{ opacity: 0, x: 16 }}
                   >
                     <span className={s.selectedName}>
-                      {byId.get(recipeId)?.name ?? "Deleted recipe"}
+                      {capitalize(byId.get(recipeId)?.name ?? "Deleted recipe")}
                     </span>
                     <Stepper
                       label="Servings"
@@ -214,7 +215,7 @@ export function MealSheet({ target, onClose }: MealSheetProps) {
                       onClick={() => toggleRecipe(recipe)}
                     >
                       <span className={s.check}>{selected && <Check />}</span>
-                      <span className={s.optionName}>{recipe.name}</span>
+                      <span className={s.optionName}>{capitalize(recipe.name)}</span>
                       {recipe.tags.length > 0 && (
                         <span className={s.optionTags}>{recipe.tags.join(" · ")}</span>
                       )}

@@ -50,6 +50,7 @@ export function TagInput({ tags, onChange, suggestions }: TagInputProps) {
           value={draft}
           placeholder={tags.length ? "Add tag…" : "e.g. veggie, quick"}
           aria-label="Add tag"
+          autoCapitalize="off"
           enterKeyHint="done"
           onChange={(event) => {
             const value = event.target.value;

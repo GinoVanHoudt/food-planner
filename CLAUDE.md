@@ -62,6 +62,9 @@ src/
   ingredients by name. Amounts are only subtracted within the same unit (after g/ml conversion); an
   item without amounts means "we have some" and covers any need, and `always` items are never on a
   list or used up.
+- **Names** of recipes, ingredients and shopping/inventory items are saved in lower case with
+  `cleanName` (`lib/units.ts`), because phones capitalise the first letter and computers don't, and
+  shown with `capitalize`. Their inputs set `autoCapitalize="off"`. Tags are lower case too.
 - **Dates** are local-time `DayKey` strings (`YYYY-MM-DD`); compare them as strings.
 - **Quantities** are stored per recipe servings and scaled when planned; metric units are summed in
   base units (g/ml) and formatted back (`formatAmount`).

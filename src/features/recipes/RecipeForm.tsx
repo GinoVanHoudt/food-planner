@@ -2,6 +2,7 @@ import { ClipboardPaste, Plus, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useId, useState, type FormEvent } from "react";
 import {
+  cleanName,
   COMMON_UNITS,
   formatQuantity,
   MAX_NAME_LENGTH,
@@ -96,7 +97,7 @@ export function RecipeForm({
     event.preventDefault();
     if (!name.trim()) return;
     onSubmit({
-      name: name.trim(),
+      name: cleanName(name),
       servings,
       tags,
       sourceUrl: normalizeUrl(sourceUrl),
@@ -104,7 +105,7 @@ export function RecipeForm({
       ingredients: rows
         .filter((row) => row.name.trim())
         .map((row) => ({
-          name: row.name.trim(),
+          name: cleanName(row.name),
           quantity: parseQuantity(row.quantity),
           unit: row.unit.trim() ? normalizeUnit(row.unit) : "",
         })),
@@ -120,9 +121,10 @@ export function RecipeForm({
             pattern=".*\S.*"
             title="Enter a name"
             maxLength={MAX_NAME_LENGTH}
+            autoCapitalize="off"
             value={name}
             onChange={(event) => setName(event.target.value)}
-            placeholder="e.g. Chili sin carne"
+            placeholder="e.g. chili sin carne"
             autoFocus={!initial}
           />
         </Field>
@@ -193,6 +195,7 @@ export function RecipeForm({
                   maxLength={MAX_NAME_LENGTH}
                   aria-label={`Ingredient ${index + 1}`}
                   placeholder="Ingredient"
+                  autoCapitalize="off"
                   enterKeyHint="next"
                   value={row.name}
                   onChange={(event) => updateRow(row.key, { name: event.target.value })}

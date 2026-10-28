@@ -32,7 +32,7 @@ function plan(...days: DayPlan[]) {
 const noStock: Stock = new Map();
 
 describe("buildList", () => {
-  it("merges ingredients across recipes, scaled to the planned servings", () => {
+  it("merges ingredients across recipes in lower case, scaled to the planned servings", () => {
     const days = plan(
       { id: "2026-10-26", dinner: { recipes: [{ recipeId: "Chili", servings: 4 }], note: "" } },
       { id: "2026-10-27", lunch: { recipes: [{ recipeId: "Curry", servings: 4 }], note: "" } },
@@ -51,28 +51,28 @@ describe("buildList", () => {
     expect(mealCount).toBe(2);
     expect(items).toEqual([
       {
-        name: "Coconut milk",
+        name: "coconut milk",
         amounts: [{ quantity: 800, unit: "ml" }],
         sectionId: "other",
-        sources: ["Curry"],
+        sources: ["curry"],
       },
       {
-        name: "Minced beef",
+        name: "minced beef",
         amounts: [{ quantity: 1000, unit: "g" }],
         sectionId: "meat",
-        sources: ["Chili", "Curry"],
+        sources: ["chili", "curry"],
       },
       {
-        name: "Onion",
+        name: "onion",
         amounts: [{ quantity: 4, unit: "" }],
         sectionId: "produce",
-        sources: ["Chili", "Curry"],
+        sources: ["chili", "curry"],
       },
       {
-        name: "Salt",
+        name: "salt",
         amounts: [{ quantity: null, unit: "" }],
         sectionId: "other",
-        sources: ["Chili"],
+        sources: ["chili"],
       },
     ]);
   });
@@ -93,10 +93,10 @@ describe("buildList", () => {
       sectionOf,
     });
 
-    expect(items.find((item) => item.name === "Onion")?.amounts).toEqual([
+    expect(items.find((item) => item.name === "onion")?.amounts).toEqual([
       { quantity: 1, unit: "" },
     ]);
-    expect(items.find((item) => item.name === "Minced beef")?.amounts).toEqual([
+    expect(items.find((item) => item.name === "minced beef")?.amounts).toEqual([
       { quantity: 125, unit: "g" },
     ]);
   });
@@ -149,10 +149,10 @@ describe("buildList", () => {
     expect(atHome).toBe(2);
     expect(items).toEqual([
       {
-        name: "Minced beef",
+        name: "minced beef",
         amounts: [{ quantity: 300, unit: "g" }],
         sectionId: "meat",
-        sources: ["Chili"],
+        sources: ["chili"],
       },
     ]);
   });
@@ -179,7 +179,7 @@ describe("buildList", () => {
       sectionOf,
     });
 
-    expect(items.map((item) => item.name)).not.toContain("Minced beef");
+    expect(items.map((item) => item.name)).not.toContain("minced beef");
   });
 
   it("skips cooked meals and sets aside stock for meals before the range", () => {
@@ -210,7 +210,7 @@ describe("buildList", () => {
 
     // Today's dinner still needs 400 ml, so only 200 ml of the stock is left for tomorrow.
     expect(mealCount).toBe(1);
-    expect(items.find((item) => item.name === "Coconut milk")?.amounts).toEqual([
+    expect(items.find((item) => item.name === "coconut milk")?.amounts).toEqual([
       { quantity: 200, unit: "ml" },
     ]);
   });

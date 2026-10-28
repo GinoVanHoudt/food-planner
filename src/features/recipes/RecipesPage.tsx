@@ -2,6 +2,7 @@ import { CookingPot, Plus } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { Link, useNavigate } from "react-router";
 import { plural } from "../../lib/plural";
+import { capitalize } from "../../lib/units";
 import { Button } from "../../ui/Button";
 import { Chip } from "../../ui/Chip";
 import { EmptyState } from "../../ui/EmptyState";
@@ -58,7 +59,7 @@ export function RecipesPage() {
                     exit={{ opacity: 0, scale: 0.96 }}
                   >
                     <Link to={`/recipes/${recipe.id}`} className={s.card}>
-                      <span className={s.name}>{recipe.name}</span>
+                      <span className={s.name}>{capitalize(recipe.name)}</span>
                       <span className={s.meta}>
                         {plural(recipe.ingredients.length, "ingredient")} · serves {recipe.servings}
                       </span>

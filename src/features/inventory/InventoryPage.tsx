@@ -2,7 +2,7 @@ import { Plus, Refrigerator } from "lucide-react";
 import { AnimatePresence } from "motion/react";
 import { useState, type FormEvent } from "react";
 import { groupInOrder } from "../../lib/group";
-import { formatAmounts, MAX_NAME_LENGTH, parseIngredientLine } from "../../lib/units";
+import { capitalize, formatAmounts, MAX_NAME_LENGTH, parseIngredientLine } from "../../lib/units";
 import { IconButton } from "../../ui/Button";
 import { EmptyState } from "../../ui/EmptyState";
 import { Input } from "../../ui/Field";
@@ -57,6 +57,7 @@ export function InventoryPage() {
             placeholder="Add what you have, e.g. 500 g rice"
             maxLength={MAX_NAME_LENGTH}
             aria-label="Add to inventory"
+            autoCapitalize="off"
             enterKeyHint="done"
           />
           <IconButton
@@ -82,7 +83,7 @@ export function InventoryPage() {
                 {groupItems.map((item) => (
                   <li key={item.id}>
                     <button type="button" className={s.item} onClick={() => setTarget({ item })}>
-                      <span className={s.name}>{item.name}</span>
+                      <span className={s.name}>{capitalize(item.name)}</span>
                       {!item.always && (
                         <span className={s.amount}>
                           {item.amounts.length > 0 ? formatAmounts(item.amounts) : "some"}

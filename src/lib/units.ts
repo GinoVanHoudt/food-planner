@@ -98,17 +98,17 @@ export function parseQuantity(text: string): number | null {
   return Number.isFinite(value) && value >= 0 ? value : null;
 }
 
-/** Parses free text like "200 g onions", "2kg potatoes", "3 eggs" or "salt". */
+/** Parses free text like "200 g onions", "2kg potatoes", "3 eggs" or "salt". The name is cleaned. */
 export function parseIngredientLine(line: string): Ingredient {
   const match = /^\s*(\d+(?:[.,]\d+)?(?:\s+\d+\/\d+|\/\d+)?)\s*(.*)$/.exec(expandFractions(line));
-  if (!match) return { name: line.trim(), quantity: null, unit: "" };
+  if (!match) return { name: cleanName(line), quantity: null, unit: "" };
   const quantity = parseQuantity(match[1]);
   const rest = match[2].trim();
   const unitMatch = /^([a-zA-Z]+\.?)\s+(.+)$/.exec(rest);
   if (unitMatch && UNIT_LOOKUP.has(unitMatch[1].toLowerCase().replace(/\.$/, ""))) {
-    return { name: unitMatch[2].trim(), quantity, unit: normalizeUnit(unitMatch[1]) };
+    return { name: cleanName(unitMatch[2]), quantity, unit: normalizeUnit(unitMatch[1]) };
   }
-  return { name: rest, quantity, unit: "" };
+  return { name: cleanName(rest), quantity, unit: "" };
 }
 
 export function scaleAmount(amount: Amount, factor: number): Amount {
@@ -202,9 +202,22 @@ export function formatAmounts(amounts: Amount[]): string {
   return amounts.map(formatAmount).filter(Boolean).join(" + ");
 }
 
+/**
+ * A recipe, ingredient or item name as it is saved: trimmed and in lower case, so names typed on a
+ * phone (which capitalises the first letter) and on a computer are the same.
+ */
+export function cleanName(name: string): string {
+  return name.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+/** A saved name as shown: "chili sin carne" → "Chili sin carne". */
+export function capitalize(name: string): string {
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
+
 /** Stable key for an ingredient name, also used as its Firestore document id. */
 export function ingredientKey(name: string): string {
-  const key = name.trim().toLowerCase().replace(/\s+/g, " ").replaceAll("/", "-");
+  const key = cleanName(name).replaceAll("/", "-");
   // Firestore rejects the document ids ".", ".." and "__…__".
   return /^\.{1,2}$|^__.*__$/.test(key) ? `~${key}` : key;
 }
