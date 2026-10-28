@@ -2,7 +2,7 @@ import { Check, ChefHat, RotateCcw, Soup, Utensils, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { Link } from "react-router";
-import { formatDay, type DayKey } from "../../lib/dates";
+import { formatDay, formatNearDay, todayKey, type DayKey } from "../../lib/dates";
 import { cx } from "../../lib/cx";
 import { capitalize, cleanName, formatAmounts } from "../../lib/units";
 import { Button, IconButton } from "../../ui/Button";
@@ -25,6 +25,7 @@ import {
   MEAL_LABELS,
   previousSlot,
   recipeNames,
+  upcomingPlans,
   type Meal,
   type Slot,
 } from "./types";
@@ -125,6 +126,10 @@ export function MealSheet({ target, onClose }: MealSheetProps) {
   const meals = items.filter((item) => !item.always && isMeal(item.name)).sort(byExpiry);
 
   const shown = target ?? openedFor;
+  const today = todayKey();
+  const plans = shown ? upcomingPlans(days, today, shown) : null;
+  const plannedLabel = (planned: DayKey[] | undefined) =>
+    planned && `Planned ${planned.map((day) => formatNearDay(day, today)).join(", ")}`;
   const leftoverNames = shown ? recipeNames(previousSlot(days, shown.day, shown.meal), byId) : [];
   const leftoversNote = leftoverNames.length
     ? `Leftovers: ${leftoverNames.join(" + ")}`
@@ -237,6 +242,7 @@ export function MealSheet({ target, onClose }: MealSheetProps) {
               {meals.map((item) => {
                 const name = cleanName(item.name);
                 const selected = fromInventory.includes(name);
+                const planned = plannedLabel(plans?.fromInventory.get(name));
                 return (
                   <li key={item.id}>
                     <motion.button
@@ -250,6 +256,8 @@ export function MealSheet({ target, onClose }: MealSheetProps) {
                       <span className={s.optionText}>
                         <span className={s.optionName}>{capitalize(name)}</span>
                         {item.expires && <Expiry date={item.expires} />}
+                        {/* Eaten whole, so it won't be there for a second meal. */}
+                        {planned && <span className={cx(s.planned, s.warning)}>{planned}</span>}
                       </span>
                       {item.amounts.length > 0 && (
                         <span className={s.optionTags}>{formatAmounts(item.amounts)}</span>
@@ -273,6 +281,7 @@ export function MealSheet({ target, onClose }: MealSheetProps) {
             <ul className={s.options}>
               {filter.filtered.map((recipe) => {
                 const selected = isSelected(recipe.id);
+                const planned = plannedLabel(plans?.recipes.get(recipe.id));
                 return (
                   <li key={recipe.id}>
                     <motion.button
@@ -283,7 +292,10 @@ export function MealSheet({ target, onClose }: MealSheetProps) {
                       onClick={() => toggleRecipe(recipe)}
                     >
                       <span className={s.check}>{selected && <Check />}</span>
-                      <span className={s.optionName}>{capitalize(recipe.name)}</span>
+                      <span className={s.optionText}>
+                        <span className={s.optionName}>{capitalize(recipe.name)}</span>
+                        {planned && <span className={s.planned}>{planned}</span>}
+                      </span>
                       {recipe.tags.length > 0 && (
                         <span className={s.optionTags}>{recipe.tags.join(" · ")}</span>
                       )}

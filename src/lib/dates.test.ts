@@ -4,6 +4,7 @@ import {
   dayRange,
   formatDate,
   formatDay,
+  formatNearDay,
   formatRange,
   fromDayKey,
   toDayKey,
@@ -43,6 +44,13 @@ describe("formatting", () => {
     expect(formatDay("2026-10-27", "2026-10-26")).toBe("Tomorrow");
     expect(formatDay("2026-10-25", "2026-10-26")).toBe("Yesterday");
     expect(formatDay("2026-10-28", "2026-10-26")).toBe("Wed 28 Oct");
+  });
+
+  it("names near days by weekday, with the date from a week ahead", () => {
+    expect(formatNearDay("2026-10-26", "2026-10-26")).toBe("today");
+    expect(formatNearDay("2026-10-27", "2026-10-26")).toBe("tomorrow");
+    expect(formatNearDay("2026-11-01", "2026-10-26")).toBe("Sun");
+    expect(formatNearDay("2026-11-02", "2026-10-26")).toBe("Mon 2 Nov");
   });
 
   it("adds the year to dates in another year", () => {

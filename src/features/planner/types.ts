@@ -52,6 +52,32 @@ export function previousSlot(
   return meal === "dinner" ? days.get(day)?.lunch : days.get(addDays(day, -1))?.dinner;
 }
 
+/**
+ * The days each recipe (by id) and inventory meal (by name) is planned on from `today`, in meals
+ * that are not cooked yet, leaving out the meal `skip` that is being edited.
+ */
+export function upcomingPlans(
+  days: Map<DayKey, DayPlan>,
+  today: DayKey,
+  skip: { day: DayKey; meal: Meal },
+) {
+  const recipes = new Map<string, DayKey[]>();
+  const fromInventory = new Map<string, DayKey[]>();
+  const add = (plans: Map<string, DayKey[]>, key: string, day: DayKey) => {
+    const planned = plans.get(key) ?? [];
+    if (planned.at(-1) !== day) plans.set(key, [...planned, day]);
+  };
+  for (const day of [...days.keys()].filter((day) => day >= today).sort()) {
+    for (const meal of MEALS) {
+      const slot = days.get(day)?.[meal];
+      if (!slot || slot.cooked || (day === skip.day && meal === skip.meal)) continue;
+      for (const { recipeId } of slot.recipes) add(recipes, recipeId, day);
+      for (const name of slot.fromInventory ?? []) add(fromInventory, name, day);
+    }
+  }
+  return { recipes, fromInventory };
+}
+
 export function recipeNames(slot: Slot | undefined, recipes: Map<string, Recipe>): string[] {
   return (slot?.recipes ?? []).flatMap(({ recipeId }) => recipes.get(recipeId)?.name ?? []);
 }

@@ -38,6 +38,7 @@ const shortFormat = new Intl.DateTimeFormat("en-GB", {
   month: "short",
 });
 const dayMonthFormat = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" });
+const weekdayFormat = new Intl.DateTimeFormat("en-GB", { weekday: "short" });
 
 /** "Today", "Tomorrow", "Yesterday", or null for other days. */
 export function relativeDayName(key: DayKey, today = todayKey()): string | null {
@@ -55,6 +56,17 @@ export function formatDayShort(key: DayKey): string {
 /** "Today", "Tomorrow", "Yesterday" or e.g. "Wed 28 Oct". */
 export function formatDay(key: DayKey, today = todayKey()): string {
   return relativeDayName(key, today) ?? formatDayShort(key);
+}
+
+/**
+ * A day from today on, to use mid-sentence: "today", "tomorrow", "Mon" within the week, or e.g.
+ * "Mon 9 Nov" from a week ahead (when a weekday alone could mean this week or next).
+ */
+export function formatNearDay(key: DayKey, today = todayKey()): string {
+  if (key === today) return "today";
+  if (key === addDays(today, 1)) return "tomorrow";
+  if (key < addDays(today, 7)) return weekdayFormat.format(fromDayKey(key));
+  return formatDayShort(key);
 }
 
 /** e.g. "4 Nov", with the year if it is not this year's: "4 Nov 2027". */

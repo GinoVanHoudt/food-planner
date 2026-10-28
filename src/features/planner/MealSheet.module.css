@@ -106,6 +106,16 @@
   min-width: 0;
 }
 
+.planned {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.warning {
+  font-weight: 600;
+  color: var(--warning);
+}
+
 .optionTags {
   font-size: 13px;
   color: var(--text-muted);
