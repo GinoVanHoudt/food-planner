@@ -1,6 +1,7 @@
 import { doc, setDoc } from "firebase/firestore";
 import { useMemo } from "react";
 import { db } from "../../lib/firebase";
+import { withFallback } from "../../lib/group";
 import { liveDocument, useLive } from "../../lib/live";
 import { persist } from "../../lib/persist";
 
@@ -29,18 +30,15 @@ const DEFAULT_SECTIONS: Section[] = [
 const sectionsRef = () => doc(db, "settings", "sections");
 const sectionsStore = liveDocument<{ sections: Section[] }>(sectionsRef);
 
-function withOther(sections: Section[]): Section[] {
-  return sections.some((section) => section.id === OTHER_SECTION_ID)
-    ? sections
-    : [...sections, OTHER_SECTION];
-}
-
 /** Store sections in walking order. Falls back to defaults until they are first edited. */
 export function useSections(): Section[] {
   const { data } = useLive(sectionsStore);
-  return useMemo(() => withOther(data?.sections ?? DEFAULT_SECTIONS), [data]);
+  return useMemo(() => withFallback(data?.sections ?? DEFAULT_SECTIONS, OTHER_SECTION), [data]);
 }
 
 export function saveSections(sections: Section[]) {
-  persist(setDoc(sectionsRef(), { sections: withOther(sections) }), "Saving sections");
+  persist(
+    setDoc(sectionsRef(), { sections: withFallback(sections, OTHER_SECTION) }),
+    "Saving sections",
+  );
 }

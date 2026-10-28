@@ -4,6 +4,7 @@ import { Button } from "../../ui/Button";
 import { Page } from "../../ui/Page";
 import { PageHeader } from "../../ui/PageHeader";
 import { rememberIngredients, useCatalog } from "../ingredients/catalog";
+import { recipeTags } from "./filter";
 import { RecipeForm } from "./RecipeForm";
 import { saveRecipe, useRecipes, type RecipeInput } from "./recipes";
 
@@ -15,10 +16,7 @@ export function RecipeEditPage() {
   const { recipes, byId, loading } = useRecipes();
   const catalog = useCatalog();
   const recipe = id ? byId.get(id) : undefined;
-  const tagSuggestions = useMemo(
-    () => [...new Set(recipes.flatMap((other) => other.tags))].sort(),
-    [recipes],
-  );
+  const tagSuggestions = useMemo(() => recipeTags(recipes), [recipes]);
 
   const onSubmit = (input: RecipeInput) => {
     const savedId = saveRecipe(id, input);

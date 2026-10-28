@@ -22,3 +22,8 @@ export function groupInOrder<T, G extends { id: string }>(
     return groupItems ? [{ group, items: groupItems }] : [];
   });
 }
+
+/** The groups with the catch-all `fallback` group added at the end if it is missing. */
+export function withFallback<G extends { id: string }>(groups: G[], fallback: G): G[] {
+  return groups.some((group) => group.id === fallback.id) ? groups : [...groups, fallback];
+}

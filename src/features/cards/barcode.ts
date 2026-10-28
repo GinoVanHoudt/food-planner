@@ -51,6 +51,19 @@ export function toEan13(value: string): string | null {
   return (10 - (sum % 10)) % 10 === Number(code[12]) ? code : null;
 }
 
+/**
+ * A card value as typed: cleaned for saving (barcode digits without spaces, QR text trimmed),
+ * whether it can be saved, and whether to say it is wrong, which for a barcode is only once all
+ * its digits could have been typed.
+ */
+export function checkCardValue(format: CardFormat, text: string) {
+  const isBarcode = format === "ean13";
+  const value = isBarcode ? cleanDigits(text) : text.trim();
+  const valid = isBarcode ? toEan13(value) !== null : value !== "";
+  const showError = isBarcode && !valid && (value.length >= 12 || /\D/.test(value));
+  return { value, valid, showError };
+}
+
 /** The 95 modules of an EAN-13 barcode, from a valid 13-digit code. */
 export function ean13Modules(code: string): string {
   const digits = code.split("").map(Number);

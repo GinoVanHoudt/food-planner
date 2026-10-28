@@ -56,12 +56,14 @@ export function buildList({ days, recipes, from, to, today, stock, sectionOf }: 
   const items: GeneratedItem[] = [];
   let atHome = 0;
   for (const [key, need] of collectNeeds(meals, recipes)) {
-    const amounts = take(available.get(key), need.amounts)
-      .missing.map(roundForShopping)
+    const { taken, missing } = take(available.get(key), need.amounts);
+    const amounts = missing
+      .map(roundForShopping)
       // Leftovers too small to show (e.g. 0.001 g after scaling) do not need buying.
       .filter(({ quantity }) => quantity !== 0);
     if (amounts.length === 0) {
-      atHome++;
+      // Only count it as at home if the stock covered it, not if it was just too little to buy.
+      if (missing.length === 0 || taken.length > 0) atHome++;
       continue;
     }
     items.push({

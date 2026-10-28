@@ -134,6 +134,11 @@ export function addAmounts(amounts: Amount[]): Amount[] {
   return [...totals].map(([unit, quantity]) => ({ quantity, unit }));
 }
 
+/** The amounts of a typed line like "2 l milk" (in base units), or none for just "milk". */
+export function toAmounts({ quantity, unit }: Amount): Amount[] {
+  return quantity === null ? [] : addAmounts([{ quantity, unit }]);
+}
+
 /** Leftovers below this are rounding noise from converting and scaling. */
 const EPSILON = 1e-9;
 

@@ -8,6 +8,7 @@ import {
   formatAmounts,
   MAX_NAME_LENGTH,
   parseIngredientLine,
+  toAmounts,
   type Amount,
 } from "../../lib/units";
 import { Button, IconButton } from "../../ui/Button";
@@ -71,10 +72,9 @@ export function PutAwaySheet({ items, onClose }: PutAwaySheetProps) {
 
   const addExtra = (event: FormEvent) => {
     event.preventDefault();
-    const { name, quantity, unit } = parseIngredientLine(extra);
-    if (!name) return;
-    const amounts = quantity === null ? [] : [{ quantity, unit }];
-    setRows((current) => [...current, toRow(crypto.randomUUID(), name, amounts)]);
+    const line = parseIngredientLine(extra);
+    if (!line.name) return;
+    setRows((current) => [...current, toRow(crypto.randomUUID(), line.name, toAmounts(line))]);
     setExtra("");
   };
 

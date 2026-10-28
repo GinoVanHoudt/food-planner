@@ -1,6 +1,7 @@
 import { GripVertical, Plus, X } from "lucide-react";
 import { Reorder, useDragControls } from "motion/react";
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { insertBefore, moveItem } from "../lib/list";
 import { IconButton } from "./Button";
 import { Input } from "./Field";
 import s from "./OrderedListEditor.module.css";
@@ -50,21 +51,15 @@ export function OrderedListEditor({
   };
 
   const move = (index: number, offset: number) => {
-    const target = index + offset;
-    if (target < 0 || target >= items.length) return;
-    const next = [...items];
-    [next[index], next[target]] = [next[target], next[index]];
-    commit(next);
+    const next = moveItem(items, index, offset);
+    if (next !== items) commit(next);
   };
 
   const add = (event: FormEvent) => {
     event.preventDefault();
     const name = newName.trim();
     if (!name) return;
-    const item = { id: crypto.randomUUID().slice(0, 8), name };
-    const fixedIndex = items.findIndex(({ id }) => id === fixedId);
-    const at = fixedIndex === -1 ? items.length : fixedIndex;
-    commit([...items.slice(0, at), item, ...items.slice(at)]);
+    commit(insertBefore(items, { id: crypto.randomUUID().slice(0, 8), name }, fixedId));
     setNewName("");
   };
 

@@ -3,7 +3,7 @@ import type { DayKey } from "../../lib/dates";
 import { db } from "../../lib/firebase";
 import { liveCollection, liveDocument, useLive } from "../../lib/live";
 import { persist } from "../../lib/persist";
-import { addAmounts, type Ingredient } from "../../lib/units";
+import { toAmounts, type Ingredient } from "../../lib/units";
 import { setIngredientSection } from "../ingredients/catalog";
 import { addStockChanges } from "../inventory/inventory";
 import type { StockChanges } from "../inventory/stock";
@@ -50,12 +50,11 @@ export function replaceGeneratedItems(
   persist(batch.commit(), "Creating the list");
 }
 
-export function addManualItem({ name, quantity, unit }: Ingredient, sectionId: string) {
-  const amounts = quantity === null ? [] : addAmounts([{ quantity, unit }]);
+export function addManualItem(ingredient: Ingredient, sectionId: string) {
   persist(
     setDoc(doc(itemsRef()), {
-      name,
-      amounts,
+      name: ingredient.name,
+      amounts: toAmounts(ingredient),
       sectionId,
       sources: [],
       checked: false,

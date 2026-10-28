@@ -1,8 +1,13 @@
 import { Plus, Refrigerator, Soup } from "lucide-react";
 import { AnimatePresence } from "motion/react";
 import { useState, type FormEvent } from "react";
-import { groupInOrder } from "../../lib/group";
-import { capitalize, formatAmounts, MAX_NAME_LENGTH, parseIngredientLine } from "../../lib/units";
+import {
+  capitalize,
+  formatAmounts,
+  MAX_NAME_LENGTH,
+  parseIngredientLine,
+  toAmounts,
+} from "../../lib/units";
 import { IconButton } from "../../ui/Button";
 import { EmptyState } from "../../ui/EmptyState";
 import { Input } from "../../ui/Field";
@@ -15,10 +20,7 @@ import { Expiry } from "./Expiry";
 import { saveStock, useInventory } from "./inventory";
 import { InventoryItemSheet, type InventoryTarget } from "./InventoryItemSheet";
 import s from "./InventoryPage.module.css";
-import { addToStock } from "./stock";
-
-/** Shown after the locations; its id never clashes with theirs (random hex). */
-const ALWAYS_GROUP = { id: "always", name: "Always at home" };
+import { addToStock, inventoryGroups } from "./stock";
 
 export function InventoryPage() {
   const { items, stock, loading } = useInventory();
@@ -27,23 +29,13 @@ export function InventoryPage() {
   const [target, setTarget] = useState<InventoryTarget | null>(null);
   const [newItem, setNewItem] = useState("");
 
-  const groups = [
-    ...groupInOrder(
-      items.filter((item) => !item.always),
-      locations,
-      (item) => locationOf(item.name),
-      OTHER_LOCATION_ID,
-    ),
-    { group: ALWAYS_GROUP, items: items.filter((item) => item.always) },
-  ].filter((entry) => entry.items.length > 0);
+  const groups = inventoryGroups(items, locations, locationOf, OTHER_LOCATION_ID);
 
   const addItem = (event: FormEvent) => {
     event.preventDefault();
-    const { name, quantity, unit } = parseIngredientLine(newItem);
-    if (!name) return;
-    saveStock(
-      addToStock(stock, [{ name, amounts: quantity === null ? [] : [{ quantity, unit }] }]),
-    );
+    const line = parseIngredientLine(newItem);
+    if (!line.name) return;
+    saveStock(addToStock(stock, [{ name: line.name, amounts: toAmounts(line) }]));
     setNewItem("");
   };
 

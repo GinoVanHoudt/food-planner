@@ -11,6 +11,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { app, auth, db, usesEmulators } from "../../lib/firebase";
 import { resetLiveStores } from "../../lib/live";
+import { describeError } from "./errors";
 import { AuthContext, type AuthStatus } from "./useAuth";
 
 const memberCacheKey = (uid: string) => `member:${uid}`;
@@ -24,16 +25,6 @@ async function fetchMembership(user: User): Promise<boolean | null> {
   } catch (error) {
     return (error as { code?: string }).code === "permission-denied" ? false : null;
   }
-}
-
-function describeError(error: unknown): string | null {
-  const code = (error as { code?: string }).code ?? "";
-  if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") return null;
-  if (code === "auth/popup-blocked")
-    return "The sign-in popup was blocked. Allow popups and try again.";
-  if (code === "auth/network-request-failed")
-    return "No connection. Check your internet and try again.";
-  return "Sign-in failed. Please try again.";
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

@@ -57,8 +57,11 @@ src/
   the UI. Offline writes only resolve once back online, but the local cache updates immediately.
   Create ids client-side with `doc(collection(...))` instead of `addDoc`.
 - **Pure logic stays Firebase-free** so it can be unit-tested: `lib/dates.ts`, `lib/units.ts`,
-  `lib/group.ts`, `planner/types.ts`, `shopping/buildList.ts`, `inventory/stock.ts`, `cards/barcode.ts`. Use
-  `import type` for types from data modules.
+  `lib/group.ts`, `lib/list.ts`, `planner/types.ts`, `shopping/buildList.ts`, `inventory/stock.ts`,
+  `cards/barcode.ts`, `recipes/input.ts`, `recipes/filter.ts`, `ingredients/lookup.ts`,
+  `pwa/platform.ts`, `auth/errors.ts`. Use `import type` for types from data modules. Logic in
+  components and hooks goes in these modules (with a `*.test.ts` next to them), so the components
+  only wire state to it.
 - **Inventory** items are keyed by `ingredientKey`, like the catalog, so they match recipe
   ingredients by name. Amounts are only subtracted within the same unit (after g/ml conversion); an
   item without amounts means "we have some" and covers any need, and `always` items are never on a

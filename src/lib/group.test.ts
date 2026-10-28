@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vite-plus/test";
-import { groupInOrder } from "./group";
+import { groupInOrder, withFallback } from "./group";
+
+const fridge = { id: "fridge", name: "Fridge" };
+const freezer = { id: "freezer", name: "Freezer" };
+const other = { id: "other", name: "Other" };
 
 describe("groupInOrder", () => {
   it("groups in the given order, with unknown groups in the fallback and empty ones left out", () => {
-    const groups = [
-      { id: "fridge", name: "Fridge" },
-      { id: "freezer", name: "Freezer" },
-      { id: "other", name: "Other" },
-    ];
+    const groups = [fridge, freezer, other];
     const items = [
       { name: "Peas", at: "freezer" },
       { name: "Milk", at: "fridge" },
@@ -20,5 +20,22 @@ describe("groupInOrder", () => {
       { group: groups[1], items: [items[0], items[3]] },
       { group: groups[2], items: [items[2]] },
     ]);
+  });
+
+  it("drops items whose fallback group is missing too", () => {
+    const items = [{ name: "Rice", at: "deleted" }];
+    expect(groupInOrder(items, [fridge], (item) => item.at, "other")).toEqual([]);
+  });
+});
+
+describe("withFallback", () => {
+  it("adds the fallback group at the end when it is missing", () => {
+    expect(withFallback([fridge, freezer], other)).toEqual([fridge, freezer, other]);
+    expect(withFallback([], other)).toEqual([other]);
+  });
+
+  it("keeps the groups as they are when the fallback is there, wherever it is", () => {
+    const groups = [other, fridge];
+    expect(withFallback(groups, { id: "other", name: "Renamed" })).toBe(groups);
   });
 });

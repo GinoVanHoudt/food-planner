@@ -1,14 +1,21 @@
 import { describe, expect, it } from "vite-plus/test";
-import type { Slot } from "../planner/types";
+import type { Need, Slot } from "../planner/types";
 import type { Recipe } from "../recipes/recipes";
 import {
   addToStock,
+  applyChanges,
   byExpiry,
+  consume,
   cookMeal,
   editedItem,
+  expiresField,
   expiry,
+  inventoryGroups,
+  inventoryMeals,
   take,
+  takeWhole,
   type Stock,
+  type StockChanges,
   type StockItem,
 } from "./stock";
 
@@ -68,22 +75,170 @@ describe("take", () => {
       { quantity: null, unit: "" },
     ]);
   });
+
+  it("takes several units at once", () => {
+    const mixed: StockItem = {
+      name: "tomatoes",
+      amounts: [
+        { quantity: 500, unit: "g" },
+        { quantity: 3, unit: "pcs" },
+      ],
+      always: false,
+    };
+    expect(
+      take(mixed, [
+        { quantity: 0.2, unit: "kg" },
+        { quantity: 5, unit: "pcs" },
+        { quantity: 1, unit: "cups" },
+      ]),
+    ).toEqual({
+      item: { ...mixed, amounts: [{ quantity: 300, unit: "g" }] },
+      taken: [
+        { quantity: 200, unit: "g" },
+        { quantity: 3, unit: "pcs" },
+      ],
+      missing: [
+        { quantity: 2, unit: "pcs" },
+        { quantity: 1, unit: "cups" },
+      ],
+    });
+  });
+});
+
+describe("expiresField", () => {
+  it("is the date, or nothing for no or an empty date", () => {
+    expect(expiresField("2026-11-04")).toEqual({ expires: "2026-11-04" });
+    expect(expiresField(undefined)).toEqual({});
+    expect(expiresField("")).toEqual({});
+  });
+});
+
+describe("applyChanges", () => {
+  it("sets and deletes items without changing the stock it is given", () => {
+    const stock: Stock = new Map([
+      ["rice", rice],
+      ["salt", salt],
+    ]);
+    const less = { ...rice, amounts: [{ quantity: 100, unit: "g" }] };
+    const eggs = { name: "eggs", amounts: [], always: false };
+    const changes: StockChanges = new Map([
+      ["rice", less],
+      ["salt", null],
+      ["eggs", eggs],
+      ["missing", null],
+    ]);
+
+    expect(applyChanges(stock, changes)).toEqual(
+      new Map([
+        ["rice", less],
+        ["eggs", eggs],
+      ]),
+    );
+    expect(stock).toEqual(
+      new Map([
+        ["rice", rice],
+        ["salt", salt],
+      ]),
+    );
+  });
+});
+
+describe("consume", () => {
+  const need = (name: string, ...amounts: Need["amounts"]): Need => ({
+    name,
+    amounts,
+    sources: ["risotto"],
+  });
+  const stock: Stock = new Map<string, StockItem>([
+    ["rice", { ...rice, expires: "2026-11-10" }],
+    ["salt", salt],
+    ["butter", { name: "butter", amounts: [], always: false }],
+    ["milk", { name: "milk", amounts: [{ quantity: 1, unit: "l" }], always: false }],
+  ]);
+
+  it("changes only the items something was taken from", () => {
+    const { changes, taken } = consume(
+      stock,
+      new Map([
+        ["rice", need("rice", { quantity: 200, unit: "g" })],
+        ["salt", need("salt", { quantity: 5, unit: "g" })],
+        ["butter", need("butter", { quantity: 50, unit: "g" })],
+        ["milk", need("milk", { quantity: 2, unit: "cups" })],
+        ["parmesan", need("parmesan", { quantity: 50, unit: "g" })],
+      ]),
+    );
+    expect(changes).toEqual(
+      new Map([
+        [
+          "rice",
+          {
+            name: "Rice",
+            amounts: [{ quantity: 300, unit: "g" }],
+            always: false,
+            expires: "2026-11-10",
+          },
+        ],
+      ]),
+    );
+    expect(taken).toEqual([
+      { name: "rice", amounts: [{ quantity: 200, unit: "g" }], expires: "2026-11-10" },
+    ]);
+  });
+
+  it("deletes used-up items and takes only what is there", () => {
+    const { changes, taken } = consume(
+      stock,
+      new Map([["milk", need("milk", { quantity: 1500, unit: "ml" })]]),
+    );
+    expect(changes).toEqual(new Map([["milk", null]]));
+    expect(taken).toEqual([{ name: "milk", amounts: [{ quantity: 1000, unit: "ml" }] }]);
+  });
+});
+
+describe("takeWhole", () => {
+  const soup: StockItem = {
+    name: "pumpkin soup",
+    amounts: [{ quantity: 2, unit: "portions" }],
+    always: false,
+    expires: "2026-11-02",
+  };
+  const stock: Stock = new Map<string, StockItem>([
+    ["pumpkin soup", soup],
+    ["salt", salt],
+  ]);
+
+  it("takes meals out by key, with their amounts and date", () => {
+    expect(takeWhole(stock, ["Pumpkin  Soup "])).toEqual({
+      changes: new Map([["pumpkin soup", null]]),
+      taken: [
+        {
+          name: "pumpkin soup",
+          amounts: [{ quantity: 2, unit: "portions" }],
+          expires: "2026-11-02",
+        },
+      ],
+    });
+  });
+
+  it("skips missing meals and items that are always at home", () => {
+    expect(takeWhole(stock, ["lasagna", "salt"])).toEqual({ changes: new Map(), taken: [] });
+  });
 });
 
 describe("addToStock", () => {
-  it("adds to existing items and creates new ones", () => {
+  it("adds to existing items and creates new ones, named in lower case", () => {
     const stock: Stock = new Map([["rice", rice]]);
     const changes = addToStock(stock, [
       { name: "rice", amounts: [{ quantity: 1, unit: "kg" }] },
       { name: "Eggs", amounts: [{ quantity: 6, unit: "" }] },
       { name: "Eggs", amounts: [{ quantity: 4, unit: "" }] },
-      { name: "Toilet paper", amounts: [] },
+      { name: " Toilet  paper", amounts: [] },
     ]);
     expect(changes).toEqual(
       new Map([
         ["rice", { name: "Rice", amounts: [{ quantity: 1500, unit: "g" }], always: false }],
-        ["eggs", { name: "Eggs", amounts: [{ quantity: 10, unit: "" }], always: false }],
-        ["toilet paper", { name: "Toilet paper", amounts: [], always: false }],
+        ["eggs", { name: "eggs", amounts: [{ quantity: 10, unit: "" }], always: false }],
+        ["toilet paper", { name: "toilet paper", amounts: [], always: false }],
       ]),
     );
   });
@@ -92,6 +247,33 @@ describe("addToStock", () => {
     const stock: Stock = new Map([["salt", salt]]);
     expect(addToStock(stock, [{ name: "Salt", amounts: [{ quantity: 1, unit: "kg" }] }]).size).toBe(
       0,
+    );
+  });
+
+  it("skips lines without a name", () => {
+    expect(addToStock(new Map(), [{ name: "  ", amounts: [{ quantity: 1, unit: "" }] }]).size).toBe(
+      0,
+    );
+  });
+
+  it("adds up lines for the same item, keeps its name, drops empty quantities and merges kg and g", () => {
+    const stock: Stock = new Map([["rice", rice]]);
+    const changes = addToStock(stock, [
+      { name: "RICE ", amounts: [{ quantity: 1, unit: "kg" }] },
+      {
+        name: "rice",
+        amounts: [
+          { quantity: 250, unit: "g" },
+          { quantity: null, unit: "" },
+        ],
+      },
+      { name: "flour", amounts: [{ quantity: null, unit: "g" }] },
+    ]);
+    expect(changes).toEqual(
+      new Map([
+        ["rice", { name: "Rice", amounts: [{ quantity: 1750, unit: "g" }], always: false }],
+        ["flour", { name: "flour", amounts: [], always: false }],
+      ]),
     );
   });
 });
@@ -137,6 +319,27 @@ describe("editedItem", () => {
   it("is used up when only zero amounts are typed", () => {
     expect(editedItem({ ...rice, amounts: [{ quantity: 0, unit: "g" }] })).toBeNull();
   });
+
+  it("is 'some' when no amount has a quantity", () => {
+    expect(editedItem({ ...rice, amounts: [{ quantity: null, unit: "g" }] })).toEqual({
+      name: "Rice",
+      amounts: [],
+      always: false,
+    });
+  });
+
+  it("drops zero and empty amounts next to positive ones", () => {
+    expect(
+      editedItem({
+        ...rice,
+        amounts: [
+          { quantity: 0, unit: "g" },
+          { quantity: 2, unit: "pcs" },
+          { quantity: null, unit: "" },
+        ],
+      }),
+    ).toEqual({ name: "Rice", amounts: [{ quantity: 2, unit: "pcs" }], always: false });
+  });
 });
 
 describe("expiry", () => {
@@ -155,6 +358,55 @@ describe("expiry", () => {
     const soup = { name: "Soup", amounts: [], always: false, expires: "2026-11-02" };
     const lasagna = { ...soup, name: "Lasagna", expires: "2026-10-30" };
     expect([rice, soup, lasagna].sort(byExpiry)).toEqual([lasagna, soup, rice]);
+  });
+
+  it("treats equal dates as equal", () => {
+    const soup = { name: "Soup", amounts: [], always: false, expires: "2026-11-02" };
+    expect(byExpiry(soup, { ...soup, name: "Lasagna" })).toBe(0);
+    expect(byExpiry(rice, { ...rice, name: "Pasta" })).toBe(0);
+  });
+});
+
+describe("inventoryMeals", () => {
+  it("lists the full meals that are not always at home, soonest expiry first", () => {
+    const soup = { name: "soup", amounts: [], always: false, expires: "2026-11-02" };
+    const lasagna = { ...soup, name: "lasagna", expires: "2026-10-30" };
+    const leftovers = { name: "leftovers", amounts: [], always: false };
+    const stew = { name: "stew", amounts: [], always: true };
+    const meals = new Set(["soup", "lasagna", "leftovers", "stew"]);
+    expect(
+      inventoryMeals([leftovers, rice, soup, stew, lasagna], (name) => meals.has(name)),
+    ).toEqual([lasagna, soup, leftovers]);
+  });
+});
+
+describe("inventoryGroups", () => {
+  const locations = [
+    { id: "fridge", name: "Fridge" },
+    { id: "freezer", name: "Freezer" },
+    { id: "other", name: "Other" },
+  ];
+  const kept: Record<string, string> = { milk: "fridge", peas: "freezer", rice: "cellar" };
+  const locationOf = (name: string) => kept[name] ?? "other";
+  const milk = { name: "milk", amounts: [], always: false };
+  const peas = { name: "peas", amounts: [], always: false };
+  const pantryRice = { name: "rice", amounts: [], always: false };
+  const oil = { name: "oil", amounts: [], always: true };
+
+  it("groups by location in their order, with deleted ones under the fallback and always-at-home items last", () => {
+    expect(inventoryGroups([oil, pantryRice, peas, milk], locations, locationOf, "other")).toEqual([
+      { group: locations[0], items: [milk] },
+      { group: locations[1], items: [peas] },
+      { group: locations[2], items: [pantryRice] },
+      { group: { id: "always", name: "Always at home" }, items: [oil] },
+    ]);
+  });
+
+  it("leaves out empty groups", () => {
+    expect(inventoryGroups([milk], locations, locationOf, "other")).toEqual([
+      { group: locations[0], items: [milk] },
+    ]);
+    expect(inventoryGroups([], locations, locationOf, "other")).toEqual([]);
   });
 });
 
@@ -181,12 +433,12 @@ describe("cookMeal", () => {
     const cooked: Slot = {
       ...planned,
       cooked: true,
-      taken: [{ name: "Rice", amounts: [{ quantity: 400, unit: "g" }] }],
+      taken: [{ name: "rice", amounts: [{ quantity: 400, unit: "g" }] }],
     };
     const { slot, changes } = cookMeal(cooked, { ...cooked, cooked: false }, recipes, new Map());
     expect(slot).toEqual(planned);
     expect(changes).toEqual(
-      new Map([["rice", { name: "Rice", amounts: [{ quantity: 400, unit: "g" }], always: false }]]),
+      new Map([["rice", { name: "rice", amounts: [{ quantity: 400, unit: "g" }], always: false }]]),
     );
   });
 
@@ -212,6 +464,123 @@ describe("cookMeal", () => {
       new Map([["rice", { name: "Rice", amounts: [{ quantity: 300, unit: "g" }], always: false }]]),
     );
     expect(slot.taken).toEqual([{ name: "rice", amounts: [{ quantity: 200, unit: "g" }] }]);
+  });
+
+  it("takes only what is there when ingredients are partly missing", () => {
+    const little: Stock = new Map([["rice", { ...rice, amounts: [{ quantity: 300, unit: "g" }] }]]);
+    const { slot, changes } = cookMeal(planned, { ...planned, cooked: true }, recipes, little);
+    expect(changes).toEqual(new Map([["rice", null]]));
+    expect(slot.taken).toEqual([{ name: "rice", amounts: [{ quantity: 300, unit: "g" }] }]);
+  });
+
+  it("keeps what was taken when a cooked meal is saved without changing its food", () => {
+    const taken = [{ name: "rice", amounts: [{ quantity: 400, unit: "g" }] }];
+    const cooked: Slot = { ...planned, cooked: true, taken };
+    const { slot, changes } = cookMeal(cooked, { ...cooked, note: "Lovely" }, recipes, stock);
+    expect(changes.size).toBe(0);
+    expect(slot).toEqual({ ...planned, note: "Lovely", cooked: true, taken });
+  });
+
+  it("puts everything back when a cooked meal loses all its food", () => {
+    const cooked: Slot = {
+      ...planned,
+      cooked: true,
+      taken: [{ name: "rice", amounts: [{ quantity: 400, unit: "g" }] }],
+    };
+    const { slot, changes } = cookMeal(cooked, { ...cooked, recipes: [] }, recipes, new Map());
+    expect(slot).toEqual({ recipes: [], note: "" });
+    expect(changes).toEqual(
+      new Map([["rice", { name: "rice", amounts: [{ quantity: 400, unit: "g" }], always: false }]]),
+    );
+  });
+
+  it("is not cooked without food", () => {
+    const note: Slot = { recipes: [], note: "Eat out" };
+    expect(cookMeal(note, { ...note, cooked: true }, recipes, stock)).toEqual({
+      slot: note,
+      changes: new Map(),
+    });
+  });
+
+  it("does not put back what has since become always at home", () => {
+    const cooked: Slot = {
+      ...planned,
+      cooked: true,
+      taken: [{ name: "rice", amounts: [{ quantity: 400, unit: "g" }] }],
+    };
+    const always: Stock = new Map([["rice", { name: "rice", amounts: [], always: true }]]);
+    expect(cookMeal(cooked, { ...cooked, cooked: false }, recipes, always).changes.size).toBe(0);
+  });
+
+  it("adds what is put back to restocked items, keeping the earliest date", () => {
+    const cooked: Slot = {
+      ...planned,
+      cooked: true,
+      taken: [{ name: "rice", amounts: [{ quantity: 400, unit: "g" }], expires: "2026-11-10" }],
+    };
+    const restocked: Stock = new Map([
+      ["rice", { ...rice, amounts: [{ quantity: 1, unit: "kg" }], expires: "2027-03-01" }],
+    ]);
+    expect(cookMeal(cooked, { ...cooked, cooked: false }, recipes, restocked).changes).toEqual(
+      new Map([
+        [
+          "rice",
+          {
+            name: "Rice",
+            amounts: [{ quantity: 1400, unit: "g" }],
+            always: false,
+            expires: "2026-11-10",
+          },
+        ],
+      ]),
+    );
+  });
+
+  it("does not take inventory meals that are gone", () => {
+    const soup: Slot = { recipes: [], fromInventory: ["pumpkin soup"], note: "" };
+    expect(cookMeal(soup, { ...soup, cooked: true }, recipes, stock)).toEqual({
+      slot: { ...soup, cooked: true, taken: [] },
+      changes: new Map(),
+    });
+  });
+
+  it("restores the stock when a meal is cooked and then no longer cooked", () => {
+    const original: Stock = new Map<string, StockItem>([
+      ["rice", { name: "rice", amounts: [{ quantity: 500, unit: "g" }], always: false }],
+      [
+        "parmesan",
+        {
+          name: "parmesan",
+          amounts: [{ quantity: 80, unit: "g" }],
+          always: false,
+          expires: "2026-11-05",
+        },
+      ],
+      ["salt", salt],
+      [
+        "pumpkin soup",
+        {
+          name: "pumpkin soup",
+          amounts: [{ quantity: 750, unit: "ml" }],
+          always: false,
+          expires: "2026-12-01",
+        },
+      ],
+      ["pasta leftovers", { name: "pasta leftovers", amounts: [], always: false }],
+    ]);
+    const meal: Slot = {
+      recipes: [{ recipeId: "risotto", servings: 4 }],
+      fromInventory: ["pumpkin soup", "pasta leftovers"],
+      note: "",
+    };
+
+    const cooked = cookMeal(meal, { ...meal, cooked: true }, recipes, original);
+    const eaten = applyChanges(original, cooked.changes);
+    expect([...eaten.keys()]).toEqual(["rice", "salt"]);
+
+    const undone = cookMeal(cooked.slot, { ...cooked.slot, cooked: false }, recipes, eaten);
+    expect(undone.slot).toEqual(meal);
+    expect(applyChanges(eaten, undone.changes)).toEqual(original);
   });
 
   describe("with full meals from the inventory", () => {

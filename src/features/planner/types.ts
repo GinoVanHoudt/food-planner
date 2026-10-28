@@ -1,4 +1,4 @@
-import { addDays, type DayKey } from "../../lib/dates";
+import { addDays, formatNearDay, type DayKey } from "../../lib/dates";
 import { addAmounts, cleanName, ingredientKey, scaleAmount, type Amount } from "../../lib/units";
 import type { StockLine } from "../inventory/stock";
 import type { Recipe } from "../recipes/recipes";
@@ -43,6 +43,11 @@ export function isEmptySlot(slot: Slot | undefined): boolean {
   return !slot || (!hasFood(slot) && !slot.note.trim());
 }
 
+/** How many meals on `keys` have something planned: food or a note. */
+export function plannedCount(days: Map<DayKey, DayPlan>, keys: DayKey[]): number {
+  return keys.flatMap((day) => MEALS.filter((meal) => !isEmptySlot(days.get(day)?.[meal]))).length;
+}
+
 /** The meal right before this one: lunch → previous day's dinner, dinner → same day's lunch. */
 export function previousSlot(
   days: Map<DayKey, DayPlan>,
@@ -78,8 +83,25 @@ export function upcomingPlans(
   return { recipes, fromInventory };
 }
 
+/** e.g. "Planned today, Fri" for days from `upcomingPlans`, or undefined if there are none. */
+export function plannedLabel(days: DayKey[] | undefined, today: DayKey): string | undefined {
+  return days?.length
+    ? `Planned ${days.map((day) => formatNearDay(day, today)).join(", ")}`
+    : undefined;
+}
+
 export function recipeNames(slot: Slot | undefined, recipes: Map<string, Recipe>): string[] {
   return (slot?.recipes ?? []).flatMap(({ recipeId }) => recipes.get(recipeId)?.name ?? []);
+}
+
+/** The note for eating the previous meal's leftovers: "Leftovers: chili + rice", or "Leftovers". */
+export function leftoversNote(names: string[]): string {
+  return names.length > 0 ? `Leftovers: ${names.join(" + ")}` : "Leftovers";
+}
+
+/** Whether a note, picked or typed, is about leftovers. */
+export function isLeftoversNote(note: string): boolean {
+  return note.trim().toLowerCase().startsWith("leftovers");
 }
 
 /** An ingredient that planned meals need, with its amounts added up per unit. */

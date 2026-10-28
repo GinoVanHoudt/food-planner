@@ -2,7 +2,7 @@ import { Check, ChefHat, RotateCcw, Soup, Utensils, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { Link } from "react-router";
-import { formatDay, formatNearDay, todayKey, type DayKey } from "../../lib/dates";
+import { formatDay, todayKey, type DayKey } from "../../lib/dates";
 import { cx } from "../../lib/cx";
 import { capitalize, cleanName, formatAmounts } from "../../lib/units";
 import { Button, IconButton } from "../../ui/Button";
@@ -13,7 +13,7 @@ import { Stepper } from "../../ui/Stepper";
 import { useCatalog } from "../ingredients/catalog";
 import { Expiry } from "../inventory/Expiry";
 import { useInventory } from "../inventory/inventory";
-import { byExpiry, cookMeal } from "../inventory/stock";
+import { cookMeal, inventoryMeals } from "../inventory/stock";
 import { RecipeFilterBar } from "../recipes/RecipeFilterBar";
 import { useRecipes, type Recipe } from "../recipes/recipes";
 import { useRecipeFilter } from "../recipes/useRecipeFilter";
@@ -22,7 +22,9 @@ import { saveSlot, usePlan } from "./plan";
 import {
   EMPTY_SLOT,
   hasFood,
+  leftoversNote,
   MEAL_LABELS,
+  plannedLabel,
   previousSlot,
   recipeNames,
   upcomingPlans,
@@ -123,17 +125,14 @@ export function MealSheet({ target, onClose }: MealSheetProps) {
 
   const toggleCooked = () => setDraft((current) => ({ ...current, cooked: !current.cooked }));
 
-  const meals = items.filter((item) => !item.always && isMeal(item.name)).sort(byExpiry);
+  const meals = inventoryMeals(items, isMeal);
 
   const shown = target ?? openedFor;
   const today = todayKey();
   const plans = shown ? upcomingPlans(days, today, shown) : null;
-  const plannedLabel = (planned: DayKey[] | undefined) =>
-    planned && `Planned ${planned.map((day) => formatNearDay(day, today)).join(", ")}`;
-  const leftoverNames = shown ? recipeNames(previousSlot(days, shown.day, shown.meal), byId) : [];
-  const leftoversNote = leftoverNames.length
-    ? `Leftovers: ${leftoverNames.join(" + ")}`
-    : "Leftovers";
+  const leftovers = leftoversNote(
+    shown ? recipeNames(previousSlot(days, shown.day, shown.meal), byId) : [],
+  );
 
   return (
     <Sheet
@@ -220,8 +219,8 @@ export function MealSheet({ target, onClose }: MealSheetProps) {
           <ChipRow>
             <Chip
               icon={<RotateCcw />}
-              selected={draft.note === leftoversNote}
-              onClick={() => setNote(leftoversNote)}
+              selected={draft.note === leftovers}
+              onClick={() => setNote(leftovers)}
             >
               Leftovers
             </Chip>
@@ -242,7 +241,7 @@ export function MealSheet({ target, onClose }: MealSheetProps) {
               {meals.map((item) => {
                 const name = cleanName(item.name);
                 const selected = fromInventory.includes(name);
-                const planned = plannedLabel(plans?.fromInventory.get(name));
+                const planned = plannedLabel(plans?.fromInventory.get(name), today);
                 return (
                   <li key={item.id}>
                     <motion.button
@@ -281,7 +280,7 @@ export function MealSheet({ target, onClose }: MealSheetProps) {
             <ul className={s.options}>
               {filter.filtered.map((recipe) => {
                 const selected = isSelected(recipe.id);
-                const planned = plannedLabel(plans?.recipes.get(recipe.id));
+                const planned = plannedLabel(plans?.recipes.get(recipe.id), today);
                 return (
                   <li key={recipe.id}>
                     <motion.button

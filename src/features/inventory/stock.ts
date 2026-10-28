@@ -1,5 +1,12 @@
 import { addDays, formatDate, relativeDayName, type DayKey } from "../../lib/dates";
-import { addAmounts, ingredientKey, subtractAmounts, type Amount } from "../../lib/units";
+import { groupInOrder } from "../../lib/group";
+import {
+  addAmounts,
+  cleanName,
+  ingredientKey,
+  subtractAmounts,
+  type Amount,
+} from "../../lib/units";
 import { collectNeeds, hasFood, type Need, type Slot } from "../planner/types";
 import type { Recipe } from "../recipes/recipes";
 
@@ -108,7 +115,7 @@ export function addToStock(stock: Stock, lines: StockLine[]): StockChanges {
     if (!key || item?.always) continue;
     const amounts = line.amounts.filter((amount) => amount.quantity !== null);
     changes.set(key, {
-      name: item?.name ?? line.name.trim(),
+      name: item?.name ?? cleanName(line.name),
       amounts: addAmounts([...(item?.amounts ?? []), ...amounts]),
       always: false,
       ...expiresField(earliest(item?.expires, line.expires)),
@@ -124,7 +131,8 @@ export function addToStock(stock: Stock, lines: StockLine[]): StockChanges {
 export function editedItem({ name, amounts, always, expires }: StockItem): StockItem | null {
   if (always) return { name, amounts: [], always };
   const left = amounts.filter(({ quantity }) => quantity !== null && quantity > 0);
-  return amounts.length > 0 && left.length === 0
+  const typed = amounts.some(({ quantity }) => quantity !== null);
+  return typed && left.length === 0
     ? null
     : { name, amounts: left, always, ...expiresField(expires) };
 }
@@ -145,6 +153,35 @@ export function byExpiry(a: StockItem, b: StockItem): number {
   const first = a.expires ?? "9999-12-31";
   const second = b.expires ?? "9999-12-31";
   return first < second ? -1 : first > second ? 1 : 0;
+}
+
+/** The full meals at home that can be planned, soonest expiry first. */
+export function inventoryMeals<T extends StockItem>(items: T[], isMeal: (name: string) => boolean) {
+  return items.filter((item) => !item.always && isMeal(item.name)).sort(byExpiry);
+}
+
+/** Shown after the locations; its id never clashes with theirs (random hex). */
+const ALWAYS_GROUP = { id: "always", name: "Always at home" };
+
+/**
+ * The items by where they are kept, in the order of `locations` (unknown places count as
+ * `fallbackId`), followed by the items that are always at home. Empty groups are left out.
+ */
+export function inventoryGroups<T extends StockItem>(
+  items: T[],
+  locations: { id: string; name: string }[],
+  locationOf: (name: string) => string,
+  fallbackId: string,
+) {
+  return [
+    ...groupInOrder(
+      items.filter((item) => !item.always),
+      locations,
+      (item) => locationOf(item.name),
+      fallbackId,
+    ),
+    { group: ALWAYS_GROUP, items: items.filter((item) => item.always) },
+  ].filter((entry) => entry.items.length > 0);
 }
 
 function sameFood(a: Slot, b: Slot): boolean {

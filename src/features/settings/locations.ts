@@ -1,6 +1,7 @@
 import { doc, setDoc } from "firebase/firestore";
 import { useMemo } from "react";
 import { db } from "../../lib/firebase";
+import { withFallback } from "../../lib/group";
 import { liveDocument, useLive } from "../../lib/live";
 import { persist } from "../../lib/persist";
 
@@ -26,18 +27,15 @@ const DEFAULT_LOCATIONS: StorageLocation[] = [
 const locationsRef = () => doc(db, "settings", "locations");
 const locationsStore = liveDocument<{ locations: StorageLocation[] }>(locationsRef);
 
-function withOther(locations: StorageLocation[]): StorageLocation[] {
-  return locations.some((location) => location.id === OTHER_LOCATION_ID)
-    ? locations
-    : [...locations, OTHER_LOCATION];
-}
-
 /** Inventory locations in their chosen order. Falls back to defaults until they are first edited. */
 export function useLocations(): StorageLocation[] {
   const { data } = useLive(locationsStore);
-  return useMemo(() => withOther(data?.locations ?? DEFAULT_LOCATIONS), [data]);
+  return useMemo(() => withFallback(data?.locations ?? DEFAULT_LOCATIONS, OTHER_LOCATION), [data]);
 }
 
 export function saveLocations(locations: StorageLocation[]) {
-  persist(setDoc(locationsRef(), { locations: withOther(locations) }), "Saving locations");
+  persist(
+    setDoc(locationsRef(), { locations: withFallback(locations, OTHER_LOCATION) }),
+    "Saving locations",
+  );
 }

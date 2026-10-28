@@ -4,7 +4,8 @@ import { useEffect, type ReactNode } from "react";
 import { Button } from "../../ui/Button";
 import { Sheet } from "../../ui/Sheet";
 import s from "./InstallPrompt.module.css";
-import { useInstallPrompt, type Platform } from "./useInstallPrompt";
+import type { Platform } from "./platform";
+import { useInstallPrompt } from "./useInstallPrompt";
 
 const AUTO_OPEN_DELAY_MS = 2500;
 

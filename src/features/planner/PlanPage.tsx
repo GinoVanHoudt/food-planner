@@ -12,7 +12,7 @@ import { DayCard } from "./DayCard";
 import { MealSheet, type MealTarget } from "./MealSheet";
 import { usePlan } from "./plan";
 import s from "./PlanPage.module.css";
-import { isEmptySlot, MEALS } from "./types";
+import { MEALS, plannedCount } from "./types";
 
 export function PlanPage() {
   const today = todayKey();
@@ -26,15 +26,13 @@ export function PlanPage() {
 
   const upcoming = dayRange(today, lastDay);
   const shown = showPast ? dayRange(addDays(today, -PAST_DAYS), lastDay) : upcoming;
-  const planned = upcoming.flatMap((day) =>
-    MEALS.filter((meal) => !isEmptySlot(days.get(day)?.[meal])),
-  );
+  const planned = plannedCount(days, upcoming);
 
   return (
     <>
       <PageHeader
         title="Plan"
-        subtitle={`${formatRange(today, lastDay)} · ${planned.length}/${upcoming.length * MEALS.length} meals planned`}
+        subtitle={`${formatRange(today, lastDay)} · ${planned}/${upcoming.length * MEALS.length} meals planned`}
         actions={
           <Button
             variant="primary"

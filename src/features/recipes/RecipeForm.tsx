@@ -6,9 +6,6 @@ import {
   COMMON_UNITS,
   formatQuantity,
   MAX_NAME_LENGTH,
-  normalizeUnit,
-  parseIngredientLine,
-  parseQuantity,
   type Ingredient,
 } from "../../lib/units";
 import { Button, IconButton } from "../../ui/Button";
@@ -16,15 +13,13 @@ import { Field, Input, Textarea } from "../../ui/Field";
 import { Card } from "../../ui/Page";
 import { Sheet } from "../../ui/Sheet";
 import { Stepper } from "../../ui/Stepper";
+import { normalizeUrl, parseIngredientList, toIngredients, type IngredientRow } from "./input";
 import { DEFAULT_SERVINGS, type Recipe, type RecipeInput } from "./recipes";
 import s from "./RecipeForm.module.css";
 import { TagInput } from "./TagInput";
 
-interface Row {
+interface Row extends IngredientRow {
   key: string;
-  quantity: string;
-  unit: string;
-  name: string;
 }
 
 const toRow = (ingredient: Ingredient): Row => ({
@@ -35,12 +30,6 @@ const toRow = (ingredient: Ingredient): Row => ({
 });
 
 const emptyRow = () => toRow({ name: "", quantity: null, unit: "" });
-
-function normalizeUrl(url: string): string {
-  const trimmed = url.trim();
-  if (!trimmed) return "";
-  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
-}
 
 interface RecipeFormProps {
   id: string;
@@ -80,14 +69,7 @@ export function RecipeForm({
   };
 
   const addPasted = () => {
-    const parsed = pasteText
-      .split("\n")
-      .map((line) => line.replace(/^[-•*\s]+/, ""))
-      .filter((line) => line.trim())
-      .map((line) => parseIngredientLine(line))
-      .map((ingredient) =>
-        toRow({ ...ingredient, name: ingredient.name.slice(0, MAX_NAME_LENGTH) }),
-      );
+    const parsed = parseIngredientList(pasteText).map(toRow);
     setRows((current) => [...current.filter((row) => row.name.trim()), ...parsed]);
     setPasteText("");
     setPasteOpen(false);
@@ -102,13 +84,7 @@ export function RecipeForm({
       tags,
       sourceUrl: normalizeUrl(sourceUrl),
       instructions: instructions.trim(),
-      ingredients: rows
-        .filter((row) => row.name.trim())
-        .map((row) => ({
-          name: cleanName(row.name),
-          quantity: parseQuantity(row.quantity),
-          unit: row.unit.trim() ? normalizeUnit(row.unit) : "",
-        })),
+      ingredients: toIngredients(rows),
     });
   };
 

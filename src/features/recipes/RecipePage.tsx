@@ -9,16 +9,9 @@ import { EmptyState } from "../../ui/EmptyState";
 import { Card, Page } from "../../ui/Page";
 import { PageHeader } from "../../ui/PageHeader";
 import { Stepper } from "../../ui/Stepper";
+import { hostname, webUrl } from "./input";
 import { deleteRecipe, useRecipes } from "./recipes";
 import s from "./RecipePage.module.css";
-
-function hostname(url: string): string {
-  try {
-    return new URL(url).hostname.replace(/^www\./, "");
-  } catch {
-    return url;
-  }
-}
 
 export function RecipePage() {
   const { id = "" } = useParams();
@@ -39,8 +32,7 @@ export function RecipePage() {
 
   const shownServings = servings ?? recipe.servings;
   const factor = shownServings / recipe.servings;
-  // Only link to web pages; never render e.g. a javascript: URL as a link.
-  const sourceUrl = /^https?:\/\//i.test(recipe.sourceUrl) ? recipe.sourceUrl : "";
+  const sourceUrl = webUrl(recipe.sourceUrl);
 
   return (
     <>

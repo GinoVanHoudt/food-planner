@@ -5,7 +5,15 @@ import { cx } from "../../lib/cx";
 import { capitalize } from "../../lib/units";
 import type { Recipe } from "../recipes/recipes";
 import s from "./DayCard.module.css";
-import { isEmptySlot, MEAL_LABELS, MEALS, type DayPlan, type Meal, type Slot } from "./types";
+import {
+  isEmptySlot,
+  isLeftoversNote,
+  MEAL_LABELS,
+  MEALS,
+  type DayPlan,
+  type Meal,
+  type Slot,
+} from "./types";
 
 interface DayCardProps {
   day: DayKey;
@@ -88,11 +96,7 @@ function MealRow({ meal, slot, recipes, onClick }: MealRowProps) {
         ))}
         {note && (
           <span className={s.note}>
-            {note.toLowerCase().startsWith("leftovers") ? (
-              <RotateCcw aria-hidden />
-            ) : (
-              <StickyNote aria-hidden />
-            )}
+            {isLeftoversNote(note) ? <RotateCcw aria-hidden /> : <StickyNote aria-hidden />}
             {note}
           </span>
         )}

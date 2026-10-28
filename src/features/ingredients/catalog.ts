@@ -3,10 +3,10 @@ import { useMemo } from "react";
 import { db } from "../../lib/firebase";
 import { liveCollection, useLive } from "../../lib/live";
 import { persist } from "../../lib/persist";
-import { compareNames } from "../../lib/sort";
 import { cleanName, ingredientKey } from "../../lib/units";
 import { OTHER_LOCATION_ID } from "../settings/locations";
 import { OTHER_SECTION_ID } from "../settings/sections";
+import { catalogLookup, unknownIngredients } from "./lookup";
 
 /**
  * Every ingredient name used so far, with the store section it was last put in, the place at home
@@ -26,33 +26,19 @@ const catalogStore = liveCollection<CatalogEntry>(catalogRef);
 
 export function useCatalog() {
   const { data, loading } = useLive(catalogStore);
-  return useMemo(() => {
-    const byKey = new Map(data.map((entry) => [entry.id, entry]));
-    const names = data.map((entry) => entry.name).sort(compareNames);
-    const sectionOf = (name: string) =>
-      byKey.get(ingredientKey(name))?.sectionId ?? OTHER_SECTION_ID;
-    const locationOf = (name: string) =>
-      byKey.get(ingredientKey(name))?.locationId ?? OTHER_LOCATION_ID;
-    const isMeal = (name: string) => Boolean(byKey.get(ingredientKey(name))?.meal);
-    return {
+  return useMemo(
+    () => ({
       entries: data,
-      names,
-      sectionOf,
-      locationOf,
-      isMeal,
-      has: (name: string) => byKey.has(ingredientKey(name)),
+      ...catalogLookup(data, { sectionId: OTHER_SECTION_ID, locationId: OTHER_LOCATION_ID }),
       loading,
-    };
-  }, [data, loading]);
+    }),
+    [data, loading],
+  );
 }
 
 /** Adds names that are not in the catalog yet (in section "Other"). */
 export function rememberIngredients(names: string[], isKnown: (name: string) => boolean) {
-  const unknown = new Map(
-    names
-      .filter((name) => name.trim() && !isKnown(name))
-      .map((name) => [ingredientKey(name), cleanName(name)]),
-  );
+  const unknown = unknownIngredients(names, isKnown);
   if (unknown.size === 0) return;
   const batch = writeBatch(db);
   for (const [key, name] of unknown) {

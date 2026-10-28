@@ -1,11 +1,10 @@
 import { useSyncExternalStore } from "react";
+import { detectPlatform } from "./platform";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
-
-export type Platform = "ios" | "android" | "macSafari" | "desktop";
 
 const DISMISSED_KEY = "installPromptDismissedAt";
 const SNOOZE_MS = 7 * 24 * 60 * 60 * 1000;
@@ -34,22 +33,11 @@ export function captureInstallPrompt() {
   window.addEventListener("appinstalled", () => update({ deferred: null, open: false }));
 }
 
-function detectPlatform(): Platform {
-  const ua = navigator.userAgent;
-  // iPadOS reports itself as a Mac, but with touch support.
-  if (/iphone|ipad|ipod/i.test(ua) || (/macintosh/i.test(ua) && navigator.maxTouchPoints > 1))
-    return "ios";
-  if (/android/i.test(ua)) return "android";
-  if (/macintosh/i.test(ua) && /safari/i.test(ua) && !/chrome|chromium|edg|firefox/i.test(ua))
-    return "macSafari";
-  return "desktop";
-}
-
 const isStandalone =
   window.matchMedia("(display-mode: standalone)").matches ||
   (navigator as Navigator & { standalone?: boolean }).standalone === true;
 
-const platform = detectPlatform();
+const platform = detectPlatform(navigator.userAgent, navigator.maxTouchPoints);
 
 function subscribe(listener: () => void) {
   listeners.add(listener);

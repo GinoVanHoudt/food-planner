@@ -1,6 +1,7 @@
 import { Plus, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
+import { cleanName } from "../../lib/units";
 import { Chip, ChipRow } from "../../ui/Chip";
 import s from "./TagInput.module.css";
 
@@ -14,7 +15,7 @@ export function TagInput({ tags, onChange, suggestions }: TagInputProps) {
   const [draft, setDraft] = useState("");
 
   const add = (value: string) => {
-    const tag = value.trim().toLowerCase();
+    const tag = cleanName(value);
     if (tag && !tags.includes(tag)) onChange([...tags, tag]);
     setDraft("");
   };

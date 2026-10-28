@@ -4,7 +4,7 @@ import { Button } from "../../ui/Button";
 import { Chip, ChipRow } from "../../ui/Chip";
 import { Field, Input } from "../../ui/Field";
 import { Sheet } from "../../ui/Sheet";
-import { cleanDigits, toEan13, type CardFormat } from "./barcode";
+import { checkCardValue, type CardFormat } from "./barcode";
 import { CardCode } from "./CardCode";
 import {
   MAX_CARD_NAME_LENGTH,
@@ -48,10 +48,7 @@ export function CardSheet({ target, onClose, onDelete }: CardSheetProps) {
   const card = (target ?? openedFor)?.card ?? null;
   const isBarcode = draft.format === "ean13";
   const name = draft.name.trim();
-  const value = isBarcode ? cleanDigits(draft.value) : draft.value.trim();
-  const validValue = isBarcode ? toEan13(value) !== null : value !== "";
-  // Only complain about a barcode once all its digits could have been typed.
-  const showError = isBarcode && !validValue && (value.length >= 12 || /\D/.test(value));
+  const { value, valid: validValue, showError } = checkCardValue(draft.format, draft.value);
 
   const update = (changes: Partial<LoyaltyCardInput>) =>
     setDraft((current) => ({ ...current, ...changes }));

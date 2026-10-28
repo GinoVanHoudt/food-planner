@@ -1,5 +1,33 @@
 import { describe, expect, it } from "vite-plus/test";
-import { ean13Modules, modulesPath, toEan13 } from "./barcode";
+import { checkCardValue, ean13Modules, modulesPath, toEan13 } from "./barcode";
+
+describe("checkCardValue", () => {
+  it("trims QR text and needs some", () => {
+    expect(checkCardValue("qr", "  https://example.com/card ")).toEqual({
+      value: "https://example.com/card",
+      valid: true,
+      showError: false,
+    });
+    expect(checkCardValue("qr", "  ")).toEqual({ value: "", valid: false, showError: false });
+  });
+
+  it("saves barcode digits without spaces", () => {
+    expect(checkCardValue("ean13", "5 901234 123457")).toEqual({
+      value: "5901234123457",
+      valid: true,
+      showError: false,
+    });
+    expect(checkCardValue("ean13", "036000291452").valid).toBe(true);
+  });
+
+  it("only flags a barcode once all digits could have been typed, or a non-digit was", () => {
+    expect(checkCardValue("ean13", "").showError).toBe(false);
+    expect(checkCardValue("ean13", "59012341").showError).toBe(false);
+    expect(checkCardValue("ean13", "5901234123458").showError).toBe(true);
+    expect(checkCardValue("ean13", "59012341234570").showError).toBe(true);
+    expect(checkCardValue("ean13", "5901-").showError).toBe(true);
+  });
+});
 
 describe("toEan13", () => {
   it.each([
