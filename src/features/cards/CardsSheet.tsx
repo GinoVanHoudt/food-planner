@@ -1,8 +1,10 @@
-import { Barcode, Pencil, Plus, QrCode } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import { useState } from "react";
+import { useWakeLock } from "../../lib/useWakeLock";
 import { Button, IconButton } from "../../ui/Button";
 import { ConfirmSheet } from "../../ui/ConfirmSheet";
 import { Sheet } from "../../ui/Sheet";
+import { CardCode } from "./CardCode";
 import { deleteCard, useCards, type LoyaltyCard } from "./cards";
 import { CardSheet, type CardTarget } from "./CardSheet";
 import s from "./CardsSheet.module.css";
@@ -14,11 +16,13 @@ interface CardsSheetProps {
 }
 
 /**
- * The store loyalty cards; tap one to show its code full size at the register. The sheet closes
- * before the code or the card editor opens, so modals never stack.
+ * The store loyalty cards with their codes, ready to scan at the register while the screen stays
+ * on; tap a code to show it full size. The sheet closes before the code or the card editor opens,
+ * so modals never stack.
  */
 export function CardsSheet({ open, onClose }: CardsSheetProps) {
   const { cards, loading } = useCards();
+  useWakeLock(open);
   const [target, setTarget] = useState<CardTarget | null>(null);
   const [shown, setShown] = useState<LoyaltyCard | null>(null);
   // Kept after the confirmation closes so its text stays put while it animates out.
@@ -47,7 +51,13 @@ export function CardsSheet({ open, onClose }: CardsSheetProps) {
         ) : (
           <ul className={s.list}>
             {cards.map((card) => (
-              <li key={card.id} className={s.row}>
+              <li key={card.id} className={s.card}>
+                <div className={s.header}>
+                  <span className={s.name}>{card.name}</span>
+                  <IconButton label={`Edit ${card.name}`} onClick={() => edit(card)}>
+                    <Pencil />
+                  </IconButton>
+                </div>
                 <button
                   type="button"
                   className={s.show}
@@ -57,12 +67,8 @@ export function CardsSheet({ open, onClose }: CardsSheetProps) {
                     setShown(card);
                   }}
                 >
-                  <span className={s.icon}>{card.format === "qr" ? <QrCode /> : <Barcode />}</span>
-                  <span className={s.name}>{card.name}</span>
+                  <CardCode format={card.format} value={card.value} />
                 </button>
-                <IconButton label={`Edit ${card.name}`} onClick={() => edit(card)}>
-                  <Pencil />
-                </IconButton>
               </li>
             ))}
           </ul>
