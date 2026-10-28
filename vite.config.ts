@@ -4,9 +4,10 @@ import { VitePWA } from "vite-plugin-pwa";
 import { defineConfig, lazyPlugins } from "vite-plus";
 
 // The logo is a full-bleed square, so icons need no extra padding (it is already maskable-safe).
+// The browser favicon is public/favicon.svg instead (just the cup), linked in index.html.
 const iconPreset = {
   ...minimal2023Preset,
-  transparent: { ...minimal2023Preset.transparent, padding: 0 },
+  transparent: { ...minimal2023Preset.transparent, padding: 0, favicons: [] },
   maskable: { ...minimal2023Preset.maskable, padding: 0 },
   apple: { ...minimal2023Preset.apple, padding: 0 },
 };
@@ -71,6 +72,7 @@ export default defineConfig({
         preset: iconPreset,
         overrideManifestIcons: true,
         injectThemeColor: false,
+        includeHtmlHeadLinks: false,
       },
       manifest: {
         name: "Food Planner",

@@ -13,7 +13,8 @@ Bought items are put away into the inventory; marking a meal cooked takes its in
 - Firebase: Auth (Google only) + Cloud Firestore with the persistent offline cache. No backend code.
 - Hosting: Firebase Hosting, deployed by `.github/workflows/deploy.yml` on every push to `main`.
 - `motion` (`motion/react`) for animations, `lucide-react` for icons, `vite-plugin-pwa` for the
-  manifest, icons (generated from `public/logo.svg`) and Workbox service worker.
+  manifest, icons (generated from `public/logo.svg`; the browser favicon is the plain cup in
+  `public/favicon.svg`) and Workbox service worker.
 - `uqr` encodes QR codes; EAN-13 barcodes are encoded in `cards/barcode.ts`.
 
 ## Commands
