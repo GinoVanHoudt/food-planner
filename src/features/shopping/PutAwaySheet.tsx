@@ -76,7 +76,7 @@ export function PutAwaySheet({ items, onClose }: PutAwaySheetProps) {
         .filter((row) => row.locationId !== locationOf(row.name))
         .map(({ name, locationId }) => ({ name, locationId })),
     );
-    showToast(`Put away ${plural(chosen.length, "item")}`);
+    showToast(`Added ${plural(chosen.length, "item")} to inventory`);
     onClose();
   };
 
@@ -84,10 +84,12 @@ export function PutAwaySheet({ items, onClose }: PutAwaySheetProps) {
     <Sheet
       open={items !== null}
       onClose={onClose}
-      title="Put away"
+      title="Add to inventory"
       footer={
         <Button variant="primary" onClick={done}>
-          {chosen.length > 0 ? `Put away ${plural(chosen.length, "item")}` : "Clear the cart"}
+          {chosen.length > 0
+            ? `Add ${plural(chosen.length, "item")} to inventory`
+            : "Clear the cart"}
         </Button>
       }
     >

@@ -166,7 +166,7 @@ export function ShoppingPage() {
                     </motion.span>
                   </button>
                   <Button size="sm" icon={<PackageCheck />} onClick={() => setPuttingAway(inCart)}>
-                    Put away
+                    Add to inventory
                   </Button>
                 </div>
                 <AnimatePresence initial={false}>

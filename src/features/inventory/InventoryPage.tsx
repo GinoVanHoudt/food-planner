@@ -73,7 +73,7 @@ export function InventoryPage() {
           <EmptyState
             icon={<Refrigerator />}
             title="Nothing at home yet"
-            text="Add what you have in the fridge, freezer and cupboards, or put away your shopping from the cart."
+            text="Add what you have in the fridge, freezer and cupboards, or add your shopping from the cart to the inventory."
           />
         ) : (
           <AnimatePresence initial={false}>

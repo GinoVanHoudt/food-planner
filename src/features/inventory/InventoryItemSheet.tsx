@@ -75,7 +75,7 @@ export function InventoryItemSheet({
       footer={
         <>
           <Button variant="danger" icon={<Trash />} onClick={remove}>
-            Remove
+            Remove from inventory
           </Button>
           <Button type="submit" form={formId} variant="primary" disabled={invalid}>
             Save

@@ -162,8 +162,8 @@ export function MealSheet({ target, onClose }: MealSheetProps) {
             </ChipRow>
             <p className={s.hint}>
               {draft.cooked
-                ? "Its ingredients are taken out of the inventory."
-                : "Mark it once it's cooked to take its ingredients out of the inventory."}
+                ? "Its ingredients are removed from the inventory."
+                : "Mark it once it's cooked to remove its ingredients from the inventory."}
             </p>
           </div>
         )}
